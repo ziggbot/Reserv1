@@ -75,7 +75,16 @@ export default function App() {
 function Header() {
   return (
     <header className="app-header">
-      <img src="./icon.svg" alt="" />
+      <svg viewBox="0 0 512 512" width="34" height="34" aria-hidden>
+        <rect width="512" height="512" rx="112" fill="#0f172a" />
+        <g stroke="#34d399" strokeWidth="34" strokeLinecap="round">
+          <line x1="120" y1="256" x2="392" y2="256" />
+          <line x1="120" y1="180" x2="120" y2="332" />
+          <line x1="392" y1="180" x2="392" y2="332" />
+          <line x1="70" y1="208" x2="70" y2="304" />
+          <line x1="442" y1="208" x2="442" y2="304" />
+        </g>
+      </svg>
       <div>
         <div className="title">FitBlueprint</div>
         <div className="subtitle">Your evidence-based personal trainer</div>

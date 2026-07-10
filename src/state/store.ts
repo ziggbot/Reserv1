@@ -1,6 +1,28 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 import type { Profile, WeighIn } from '../lib/types'
+
+/** localStorage when available; in-memory fallback for sandboxed embeds (e.g. hosted preview). */
+function safeStorage(): Storage {
+  try {
+    const probe = '__fitblueprint_probe__'
+    window.localStorage.setItem(probe, '1')
+    window.localStorage.removeItem(probe)
+    return window.localStorage
+  } catch {
+    const mem = new Map<string, string>()
+    return {
+      get length() {
+        return mem.size
+      },
+      clear: () => mem.clear(),
+      getItem: (k: string) => mem.get(k) ?? null,
+      key: (i: number) => [...mem.keys()][i] ?? null,
+      removeItem: (k: string) => void mem.delete(k),
+      setItem: (k: string, v: string) => void mem.set(k, v),
+    }
+  }
+}
 
 export interface WorkoutLogEntry {
   date: string
@@ -65,7 +87,7 @@ export const useAppStore = create<AppState>()(
           return { habitChecks: { ...s.habitChecks, [habitId]: next } }
         }),
     }),
-    { name: 'fitblueprint-v1' },
+    { name: 'fitblueprint-v1', storage: createJSONStorage(safeStorage) },
   ),
 )
 
