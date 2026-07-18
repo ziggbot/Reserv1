@@ -124,6 +124,9 @@ describe('workout store flow', () => {
     let st = useAppStore.getState()
     expect(st.activeWorkout!.exercises).toHaveLength(2)
     expect(st.activeWorkout!.exercises[0].sets).toHaveLength(2)
+    // First-ever workout: reps prefilled from the target ("8–12" → 8), weight unknown
+    expect(st.activeWorkout!.exercises[0].sets[0].reps).toBe(8)
+    expect(st.activeWorkout!.exercises[0].sets[0].weightKg).toBeNull()
 
     st.updateActiveSet(0, 0, { weightKg: 20, reps: 10, done: true })
     st.updateActiveSet(0, 1, { weightKg: 20, reps: 8, done: true })
@@ -142,14 +145,31 @@ describe('workout store flow', () => {
     expect(st.workoutLog.some((e) => e.date === '2026-07-18' && e.sessionName === 'Test Session')).toBe(true)
   })
 
-  it('next workout prefills from the last completed one', () => {
+  it('next workout prefills weight, reps AND set count from exercise memory', () => {
     const st = useAppStore.getState()
-    const last = st.completedWorkouts.find((w) => w.sessionName === 'Test Session')
-    st.startWorkout(session, last)
+    st.startWorkout(session)
     const active = useAppStore.getState().activeWorkout!
     expect(active.exercises[0].sets[0].weightKg).toBe(20)
     expect(active.exercises[0].sets[0].reps).toBe(10)
+    expect(active.exercises[0].sets[1].weightKg).toBe(20)
+    expect(active.exercises[0].sets[1].reps).toBe(8)
     expect(active.exercises[0].sets[0].done).toBe(false)
+    // Push-up got an extra 3rd set last time — the added set persists
+    expect(active.exercises[1].sets.length).toBeGreaterThanOrEqual(2)
+    useAppStore.getState().cancelWorkout()
+  })
+
+  it('memory is exercise-level: the same exercise prefills in a different session', () => {
+    const otherSession: WorkoutSession = {
+      ...session,
+      name: 'Other Session',
+      exercises: [{ name: 'Goblet squat', sets: 3, reps: '8–12', rpe: 'RPE 7' }],
+    }
+    useAppStore.getState().startWorkout(otherSession)
+    const active = useAppStore.getState().activeWorkout!
+    expect(active.exercises[0].sets[0].weightKg).toBe(20)
+    // 3rd set has no same-index history — falls back to the last remembered set
+    expect(active.exercises[0].sets[2].weightKg).toBe(20)
     useAppStore.getState().cancelWorkout()
   })
 })

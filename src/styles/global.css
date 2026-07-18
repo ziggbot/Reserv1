@@ -311,25 +311,47 @@ details.evidence summary { cursor: pointer; color: var(--text-dim); font-size: 0
 .set-header,
 .set-row {
   display: grid;
-  grid-template-columns: 34px 1fr 1fr 52px;
-  gap: 8px;
+  grid-template-columns: 22px 1fr 1fr 46px;
+  gap: 6px;
   align-items: center;
 }
-.set-header { color: var(--text-dim); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
-.set-row { margin: 6px 0; }
-.set-row input {
-  width: 100%;
-  padding: 11px 10px;
+
+.stepper { display: flex; align-items: stretch; gap: 0; min-width: 0; }
+.stepper button {
+  width: 34px;
+  min-height: 44px;
+  flex-shrink: 0;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+.stepper button:first-child { border-radius: 10px 0 0 10px; border-right: none; }
+.stepper button:last-child { border-radius: 0 10px 10px 0; border-left: none; }
+.stepper input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0;
   background: var(--surface);
   color: var(--text);
   font-size: 1.05rem;
   text-align: center;
   font-variant-numeric: tabular-nums;
-  min-width: 0;
+  padding: 10px 2px;
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
-.set-row.done input { border-color: var(--accent); background: var(--accent-soft); }
+.stepper input::-webkit-outer-spin-button,
+.stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.set-row.done .stepper input { border-color: var(--accent); background: var(--accent-soft); }
+.set-row.done .stepper button { border-color: var(--accent); }
+.set-header { color: var(--text-dim); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+.set-row { margin: 6px 0; }
 .set-num { text-align: center; color: var(--text-dim); font-weight: 600; }
 .set-check {
   width: 100%;

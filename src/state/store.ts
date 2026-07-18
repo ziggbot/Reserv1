@@ -45,6 +45,8 @@ interface AppState {
   customProgram: WorkoutProgram | null // null = follow the profile-generated program
   activeWorkout: ActiveWorkout | null
   completedWorkouts: CompletedWorkout[]
+  /** Last logged sets per exercise name — the prefill source for every future workout. */
+  exerciseMemory: Record<string, { weightKg: number | null; reps: number | null }[]>
 
   setProfile: (p: Profile) => void
   resetAll: () => void
@@ -52,7 +54,7 @@ interface AppState {
   toggleWorkout: (date: string, sessionName: string) => void
   toggleHabit: (habitId: string, date: string) => void
   setCustomProgram: (p: WorkoutProgram | null) => void
-  startWorkout: (session: WorkoutSession, lastTime?: CompletedWorkout) => void
+  startWorkout: (session: WorkoutSession) => void
   updateActiveSet: (exIdx: number, setIdx: number, patch: Partial<ActiveWorkout['exercises'][number]['sets'][number]>) => void
   addActiveSet: (exIdx: number) => void
   cancelWorkout: () => void
@@ -75,6 +77,7 @@ export const useAppStore = create<AppState>()(
       customProgram: null,
       activeWorkout: null,
       completedWorkouts: [],
+      exerciseMemory: {},
 
       setProfile: (p) =>
         set((s) => ({ profile: p, planStartDate: s.planStartDate ?? todayIso() })),
@@ -89,6 +92,7 @@ export const useAppStore = create<AppState>()(
           customProgram: null,
           activeWorkout: null,
           completedWorkouts: [],
+          exerciseMemory: {},
         }),
 
       addWeighIn: (w) =>
@@ -117,26 +121,31 @@ export const useAppStore = create<AppState>()(
 
       setCustomProgram: (p) => set({ customProgram: p }),
 
-      startWorkout: (session, lastTime) =>
+      startWorkout: (session) => {
+        const memory = get().exerciseMemory
         set({
           activeWorkout: {
             sessionName: session.name,
             startedAt: new Date().toISOString(),
             exercises: session.exercises.map((ex) => {
-              const prev = lastTime?.exercises.find((e) => e.name === ex.name)
-              const setCount = Math.max(ex.sets, prev?.sets.length ?? 0)
+              // Prefill priority: same set last time → last set last time → rep target.
+              const prev = memory[ex.name]
+              const lastSet = prev?.[prev.length - 1]
+              const targetReps = firstNumber(ex.reps)
+              const setCount = Math.max(ex.sets, prev?.length ?? 0)
               return {
                 name: ex.name,
                 targetReps: ex.reps,
                 sets: Array.from({ length: setCount }, (_, i) => ({
-                  weightKg: prev?.sets[i]?.weightKg ?? null,
-                  reps: prev?.sets[i]?.reps ?? null,
+                  weightKg: prev?.[i]?.weightKg ?? lastSet?.weightKg ?? null,
+                  reps: prev?.[i]?.reps ?? lastSet?.reps ?? targetReps,
                   done: false,
                 })),
               }
             }),
           },
-        }),
+        })
+      },
 
       updateActiveSet: (exIdx, setIdx, patch) =>
         set((s) => {
@@ -186,8 +195,13 @@ export const useAppStore = create<AppState>()(
           totalVolumeKg,
           totalSets: done.reduce((a, ex) => a + ex.sets.length, 0),
         }
+        const exerciseMemory = { ...s.exerciseMemory }
+        for (const ex of done) {
+          exerciseMemory[ex.name] = ex.sets.map((st) => ({ weightKg: st.weightKg, reps: st.reps }))
+        }
         set({
           activeWorkout: null,
+          exerciseMemory,
           completedWorkouts: [...s.completedWorkouts, completed],
           workoutLog: s.workoutLog.some((e) => e.date === nowIso && e.sessionName === completed.sessionName)
             ? s.workoutLog
@@ -199,6 +213,12 @@ export const useAppStore = create<AppState>()(
     { name: 'fitblueprint-v1', storage: createJSONStorage(safeStorage) },
   ),
 )
+
+/** First integer in a rep-target string, e.g. "8–12" → 8. Used as the reps prefill before any history exists. */
+function firstNumber(s: string): number | null {
+  const m = s.match(/\d+/)
+  return m ? Number(m[0]) : null
+}
 
 export function weeksSince(startIso: string | null, todayIsoStr: string): number {
   if (!startIso) return 0

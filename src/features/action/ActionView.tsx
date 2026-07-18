@@ -120,7 +120,7 @@ export default function ActionView() {
               </table>
             </div>
             <p className="small muted">Warm-up: {s.warmup[0]} · Mobility finisher: {s.mobilityFinisher.join(' · ')}</p>
-            <button className="primary" onClick={() => startWorkout(s, last)}>
+            <button className="primary" onClick={() => startWorkout(s)}>
               ▶ Start workout
             </button>
           </div>
@@ -331,30 +331,21 @@ function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedWorkout)
           {ex.sets.map((st, setIdx) => (
             <div className={`set-row ${st.done ? 'done' : ''}`} key={setIdx}>
               <span className="set-num">{setIdx + 1}</span>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.5"
-                value={st.weightKg ?? ''}
+              <Stepper
+                value={st.weightKg}
+                step={2.5}
+                decimals={1}
                 placeholder="kg"
-                aria-label={`${ex.name} set ${setIdx + 1} weight`}
-                onChange={(e) =>
-                  updateActiveSet(exIdx, setIdx, {
-                    weightKg: e.target.value === '' ? null : Number(e.target.value),
-                  })
-                }
+                ariaLabel={`${ex.name} set ${setIdx + 1} weight in kg`}
+                onChange={(v) => updateActiveSet(exIdx, setIdx, { weightKg: v })}
               />
-              <input
-                type="number"
-                inputMode="numeric"
-                value={st.reps ?? ''}
+              <Stepper
+                value={st.reps}
+                step={1}
+                decimals={0}
                 placeholder="reps"
-                aria-label={`${ex.name} set ${setIdx + 1} reps`}
-                onChange={(e) =>
-                  updateActiveSet(exIdx, setIdx, {
-                    reps: e.target.value === '' ? null : Number(e.target.value),
-                  })
-                }
+                ariaLabel={`${ex.name} set ${setIdx + 1} reps`}
+                onChange={(v) => updateActiveSet(exIdx, setIdx, { reps: v })}
               />
               <button
                 className={`set-check ${st.done ? 'checked' : ''}`}
@@ -400,6 +391,52 @@ function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedWorkout)
         </button>
       </div>
     </main>
+  )
+}
+
+/**
+ * Number field with big −/+ touch targets so a value can be adjusted
+ * one-handed mid-set. Weight steps 2.5 kg (smallest plate pair), reps step 1.
+ */
+function Stepper({
+  value,
+  step,
+  decimals,
+  placeholder,
+  ariaLabel,
+  onChange,
+}: {
+  value: number | null
+  step: number
+  decimals: number
+  placeholder: string
+  ariaLabel: string
+  onChange: (v: number | null) => void
+}) {
+  const round = (n: number) => Number(n.toFixed(decimals))
+  return (
+    <div className="stepper">
+      <button
+        type="button"
+        aria-label={`Decrease ${ariaLabel}`}
+        onClick={() => onChange(round(Math.max(0, (value ?? 0) - step)))}
+      >
+        −
+      </button>
+      <input
+        type="number"
+        inputMode={decimals > 0 ? 'decimal' : 'numeric'}
+        step={step}
+        min={0}
+        value={value ?? ''}
+        placeholder={placeholder}
+        aria-label={ariaLabel}
+        onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+      />
+      <button type="button" aria-label={`Increase ${ariaLabel}`} onClick={() => onChange(round((value ?? 0) + step))}>
+        +
+      </button>
+    </div>
   )
 }
 
