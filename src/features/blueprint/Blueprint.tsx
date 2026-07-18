@@ -2,7 +2,9 @@ import { useAppStore } from '../../state/store'
 import { buildProgram } from '../../lib/programs'
 import { buildNutritionPlan } from '../../lib/calculations'
 import { buildHabitPlan } from '../../lib/habits'
+import { buildOverview } from '../../lib/overview'
 import EvidencePanel from '../shared/EvidencePanel'
+import type { Tab } from '../../App'
 
 const GOAL_LABEL: Record<string, string> = {
   fat_loss: 'lose fat while keeping muscle',
@@ -11,23 +13,22 @@ const GOAL_LABEL: Record<string, string> = {
   general_fitness: 'all-round fitness and health',
 }
 
-export default function Blueprint() {
+export default function Blueprint({ onNavigate }: { onNavigate: (t: Tab) => void }) {
   const profile = useAppStore((s) => s.profile)
   if (!profile) return null
 
   const program = buildProgram(profile)
   const nutrition = buildNutritionPlan(profile)
   const habits = buildHabitPlan(profile)
+  const overview = buildOverview(profile)
 
   return (
     <main>
       <div className="card">
-        <h1>Your Complete Fitness Blueprint</h1>
-        <p>
-          Built from your interview: {profile.age} y, {profile.heightCm} cm, {profile.weightKg} kg,{' '}
-          {profile.fitnessLevel}, training {profile.daysPerWeek}×/week ({profile.minutesPerSession} min) with{' '}
-          {profile.equipment === 'none' ? 'bodyweight only' : profile.equipment === 'dumbbells' ? 'dumbbells' : 'a full gym'} —
-          goal: <strong>{GOAL_LABEL[profile.goal]}</strong>.
+        <h1>Your Fitness Blueprint</h1>
+        <p className="muted">
+          {profile.age} y · {profile.heightCm} cm · {profile.weightKg} kg · {profile.fitnessLevel} · goal:{' '}
+          <strong>{GOAL_LABEL[profile.goal]}</strong>
         </p>
         {program.cautions.map((c) => (
           <div className="banner warn" key={c}>
@@ -37,52 +38,40 @@ export default function Blueprint() {
       </div>
 
       <div className="card">
-        <h2>🏋️ Training — {program.splitName}</h2>
-        {program.sessions.map((s) => (
-          <div className="session-card" key={s.name}>
-            <h3>
-              {s.name} <span className="pill info">{s.focus}</span>
-            </h3>
-            <p className="small muted">Warm-up: {s.warmup.join(' · ')}</p>
-            <div className="table-scroll">
-              <table className="exercise-table">
-                <thead>
-                  <tr>
-                    <th>Exercise</th>
-                    <th>Sets</th>
-                    <th>Reps</th>
-                    <th>Effort</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {s.exercises.map((e, i) => (
-                    <tr key={i}>
-                      <td>{e.name}</td>
-                      <td>{e.sets}</td>
-                      <td>{e.reps}</td>
-                      <td>{e.rpe}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <h2>⭐ What matters — your marching orders</h2>
+        <p className="muted small">
+          Do these {overview.length} things consistently and everything else is optimization detail.
+        </p>
+        {overview.map((d) => (
+          <div className="directive" key={d.headline}>
+            <span className="directive-icon" aria-hidden>
+              {d.icon}
+            </span>
+            <div>
+              <strong>{d.headline}</strong>
+              <p className="muted small">{d.detail}</p>
             </div>
-            <p className="small muted">Mobility finisher (5 min): {s.mobilityFinisher.join(' · ')}</p>
           </div>
         ))}
-        <h3>Cardio & movement</h3>
-        <p>{program.cardio.description}</p>
+      </div>
+
+      <div className="card">
+        <h2>🏋️ Training — {program.splitName}</h2>
         <p>
-          Daily step floor: <strong>{program.cardio.stepsTarget.toLocaleString()}</strong> steps.
+          {program.sessions.length} strength sessions:{' '}
+          {program.sessions.map((s) => s.name).join(' · ')} — plus{' '}
+          {program.cardio.sessionsPerWeek}× zone-2 cardio
+          {program.cardio.hiitSessionsPerWeek > 0 ? ` and ${program.cardio.hiitSessionsPerWeek}× HIIT` : ''}.
         </p>
-        <h3>Progression</h3>
         <ul>
-          {program.progressionRules.map((r) => (
+          {program.progressionRules.slice(0, 2).map((r) => (
             <li key={r}>{r}</li>
           ))}
+          <li>{program.deloadRule}</li>
         </ul>
-        <p>
-          <strong>Deload:</strong> {program.deloadRule}
-        </p>
+        <button className="primary" onClick={() => onNavigate('action')}>
+          Open programs & start a workout →
+        </button>
       </div>
 
       <div className="card">
@@ -106,8 +95,8 @@ export default function Blueprint() {
           </div>
         </div>
         <p className="muted small">
-          Maintenance ≈ {nutrition.maintenanceCalories} kcal (Mifflin–St Jeor × activity). Details and meal
-          ideas live in the Nutrition tab.
+          Maintenance ≈ {nutrition.maintenanceCalories} kcal (Mifflin–St Jeor × activity). Meal ideas and
+          supplement guidance live in the Nutrition tab.
         </p>
       </div>
 
@@ -117,32 +106,23 @@ export default function Blueprint() {
           <li>
             <strong>Sleep:</strong> 7–9 h target.{' '}
             {profile.sleepHours < 7
-              ? `You reported ${profile.sleepHours} h — this is the single highest-leverage fix in your entire plan: short sleep blunts fat loss, muscle growth and willpower simultaneously.`
-              : `You reported ${profile.sleepHours} h — keep protecting it; it is a performance enhancer.`}
+              ? `You reported ${profile.sleepHours} h — this is the single highest-leverage fix in your entire plan.`
+              : `You reported ${profile.sleepHours} h — keep protecting it.`}
           </li>
           <li>
             <strong>Stress:</strong>{' '}
             {profile.stressLevel === 'high'
-              ? 'High — your zone 2 cardio and daily walks are prescribed as stress treatment too. On brutal days, do the 10-minute minimum session rather than skipping.'
-              : 'Manageable — keep an eye on it during hard training blocks.'}
+              ? 'High — your cardio doubles as stress treatment. On brutal days, do the 10-minute minimum instead of skipping.'
+              : 'Manageable — watch it during hard training blocks.'}
           </li>
           <li>
             <strong>Rest days:</strong> at least {Math.max(1, 7 - profile.daysPerWeek - 1)}–{7 - profile.daysPerWeek} full days/week.
-            Muscle is built between sessions, not during them.
           </li>
           <li>
-            <strong>Deload week</strong> every ~5 weeks (see Training) — fatigue masks fitness.
+            <strong>Mobility:</strong> 5 minutes after every session (built into your programs), targeting
+            hips, ankles and thoracic spine.
           </li>
         </ul>
-      </div>
-
-      <div className="card">
-        <h2>🤸 Mobility</h2>
-        <p>
-          Five minutes after every session (already in your workouts above), targeting the areas your
-          training and {profile.lifestyle.deskJob ? 'desk job' : 'daily life'} stiffen: hips, ankles and
-          thoracic spine. Consistency beats hour-long stretching sessions you won’t do.
-        </p>
       </div>
 
       <div className="card">
@@ -152,7 +132,7 @@ export default function Blueprint() {
             <li key={h.id}>{h.title}</li>
           ))}
         </ul>
-        <p className="muted small">Full behavioral plan — including why these specific habits — in the Habits tab.</p>
+        <p className="muted small">Full behavioral plan in the Habits tab.</p>
       </div>
 
       <EvidencePanel />

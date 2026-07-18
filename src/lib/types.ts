@@ -83,6 +83,8 @@ export interface CardioPrescription {
   sessionsPerWeek: number
   description: string
   stepsTarget: number
+  hiitSessionsPerWeek: number
+  hiitDescription: string
 }
 
 export interface WorkoutProgram {
@@ -131,6 +133,50 @@ export interface ProgressAnalysis {
   targetWeeklyChangeKg: number
   recommendation: string[]
   dietBreakSuggested: boolean
+}
+
+export interface Directive {
+  icon: string
+  headline: string
+  detail: string
+}
+
+export type EvidenceGrade = 'strong' | 'moderate' | 'emerging'
+
+export interface SupplementRec {
+  name: string
+  grade: EvidenceGrade
+  dose: string
+  timing: string
+  why: string
+  caution?: string
+}
+
+export interface LoggedSet {
+  weightKg: number | null
+  reps: number | null
+  done: boolean
+}
+
+export interface LoggedExercise {
+  name: string
+  targetReps: string
+  sets: LoggedSet[]
+}
+
+export interface ActiveWorkout {
+  sessionName: string
+  startedAt: string // ISO datetime
+  exercises: LoggedExercise[]
+}
+
+export interface CompletedWorkout {
+  date: string // ISO yyyy-mm-dd
+  sessionName: string
+  durationMin: number
+  exercises: LoggedExercise[]
+  totalVolumeKg: number
+  totalSets: number
 }
 
 export interface Habit {

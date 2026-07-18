@@ -151,12 +151,15 @@ li { margin: 0.25em 0; }
   background: var(--surface);
   border-top: 1px solid var(--border);
   display: flex;
-  justify-content: center;
   gap: 2px;
   padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
   overflow-x: auto;
   z-index: 10;
 }
+/* Centers when there is room, stays fully scrollable when there is not
+   (justify-content: center clips the left edge of overflowing flex rows). */
+.tabbar button:first-child { margin-left: auto; }
+.tabbar button:last-child { margin-right: auto; }
 .tabbar button {
   flex: 0 1 108px;
   min-width: 74px;
@@ -274,3 +277,109 @@ details.evidence { margin: 8px 0; }
 details.evidence summary { cursor: pointer; color: var(--text-dim); font-size: 0.85rem; }
 
 .footer-disclaimer { margin: 26px 0 8px; font-size: 0.75rem; color: var(--text-dim); }
+
+/* Blueprint overview directives */
+.directive { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.directive:last-child { border-bottom: none; }
+.directive-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 2px; }
+.directive p { margin: 2px 0 0; }
+
+/* Program editor */
+.editor-row {
+  display: grid;
+  grid-template-columns: 1fr 58px 92px 40px;
+  gap: 6px;
+  margin: 6px 0;
+  align-items: center;
+}
+.editor-row select,
+.editor-row input {
+  width: 100%;
+  padding: 8px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.88rem;
+  min-width: 0;
+}
+.icon-btn { padding: 8px 10px !important; font-size: 0.9rem; }
+.small-btn { padding: 7px 12px !important; font-size: 0.85rem; margin-top: 6px; }
+
+/* Active workout logger */
+.workout-screen { padding-bottom: 76px; }
+.set-header,
+.set-row {
+  display: grid;
+  grid-template-columns: 34px 1fr 1fr 52px;
+  gap: 8px;
+  align-items: center;
+}
+.set-header { color: var(--text-dim); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+.set-row { margin: 6px 0; }
+.set-row input {
+  width: 100%;
+  padding: 11px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.05rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+}
+.set-row.done input { border-color: var(--accent); background: var(--accent-soft); }
+.set-num { text-align: center; color: var(--text-dim); font-weight: 600; }
+.set-check {
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.set-check.checked { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.rest-banner {
+  position: sticky;
+  top: 8px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  background: var(--info-soft);
+  color: var(--info);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 1rem;
+  margin: 10px 0;
+}
+
+.workout-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  font-variant-numeric: tabular-nums;
+}
+
+/* Weight chart */
+.weight-chart { width: 100%; min-width: 480px; height: auto; }
+.chart-grid { stroke: var(--border); stroke-width: 1; }
+.chart-label { fill: var(--text-dim); font-size: 11px; }
+.chart-label.goal { fill: var(--accent); }
+.chart-dot { fill: var(--text-dim); opacity: 0.55; }
+.chart-avg { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; }
+.chart-goal { stroke: var(--accent); stroke-dasharray: 6 5; stroke-width: 1.5; opacity: 0.8; }

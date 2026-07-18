@@ -1,14 +1,19 @@
 import { useAppStore } from '../../state/store'
 import { buildNutritionPlan, hydrationMlPerDay } from '../../lib/calculations'
-import { mealIdeasFor, SUSTAINABLE_EATING_HABITS } from '../../lib/mealIdeas'
+import { mealsBySlot, SLOT_LABEL, SLOT_ORDER, SUSTAINABLE_EATING_HABITS } from '../../lib/mealIdeas'
+import { recommendSupplements, SUPPLEMENT_PRINCIPLES } from '../../lib/supplements'
 import EvidencePanel from '../shared/EvidencePanel'
+
+const GRADE_LABEL = { strong: 'Strong evidence', moderate: 'Moderate evidence', emerging: 'Emerging evidence' }
+const GRADE_CLS = { strong: 'ok', moderate: 'info', emerging: 'warn' }
 
 export default function NutritionView() {
   const profile = useAppStore((s) => s.profile)
   if (!profile) return null
 
   const plan = buildNutritionPlan(profile)
-  const meals = mealIdeasFor(profile.dietPref)
+  const grouped = mealsBySlot(profile.dietPref)
+  const supplements = recommendSupplements(profile)
 
   return (
     <main>
@@ -62,28 +67,58 @@ export default function NutritionView() {
           Mix and match to land near {plan.targets.calories} kcal and {plan.targets.proteinG} g protein across{' '}
           {profile.mealsPerDay} meals (~{Math.round(plan.targets.proteinG / profile.mealsPerDay)} g protein per meal).
         </p>
-        <div className="table-scroll">
-          <table className="exercise-table">
-            <thead>
-              <tr>
-                <th>Meal</th>
-                <th>Slot</th>
-                <th>Protein</th>
-                <th>≈ kcal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {meals.map((m) => (
-                <tr key={m.name}>
-                  <td>{m.name}</td>
-                  <td>{m.slot}</td>
-                  <td>{m.proteinG} g</td>
-                  <td>{m.approxKcal}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {SLOT_ORDER.map((slot) => (
+          <div key={slot}>
+            <h3>{SLOT_LABEL[slot]}</h3>
+            <div className="table-scroll">
+              <table className="exercise-table">
+                <thead>
+                  <tr>
+                    <th>Meal</th>
+                    <th>Protein</th>
+                    <th>≈ kcal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {grouped[slot].map((m) => (
+                    <tr key={m.name}>
+                      <td>{m.name}</td>
+                      <td>{m.proteinG} g</td>
+                      <td>{m.approxKcal}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="card">
+        <h2>💊 Supplements worth considering</h2>
+        <p className="muted small">
+          Selected for your goal, diet and health screen — graded by the strength of the research. Food
+          first; these close gaps.
+        </p>
+        {supplements.map((s) => (
+          <div key={s.name} style={{ marginBottom: 14 }}>
+            <h3>
+              {s.name} <span className={`pill ${GRADE_CLS[s.grade]}`}>{GRADE_LABEL[s.grade]}</span>
+            </h3>
+            <p className="small">
+              <strong>Dose:</strong> {s.dose} · <strong>When:</strong> {s.timing}
+            </p>
+            <p className="muted small">{s.why}</p>
+            {s.caution && <p className="small" style={{ color: 'var(--warn)' }}>⚠ {s.caution}</p>}
+          </div>
+        ))}
+        <ul>
+          {SUPPLEMENT_PRINCIPLES.map((p) => (
+            <li key={p} className="small">
+              {p}
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="card">

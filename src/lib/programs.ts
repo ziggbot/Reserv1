@@ -13,7 +13,7 @@ import type {
  * generated program respects what the user owns and what hurts.
  */
 
-type Pattern =
+export type Pattern =
   | 'squat'
   | 'hinge'
   | 'lunge'
@@ -24,13 +24,28 @@ type Pattern =
   | 'core'
   | 'carry_or_calf'
 
-interface ExerciseOption {
+export interface ExerciseOption {
   name: string
   equipment: Equipment[]
   avoidWith: Injury[]
 }
 
-const EXERCISES: Record<Pattern, ExerciseOption[]> = {
+/** All exercises usable with the given equipment, flagged if they load an injured area. */
+export function exerciseLibrary(
+  equipment: Equipment,
+  injuries: Injury[],
+): { name: string; pattern: Pattern; flagged: boolean }[] {
+  const out: { name: string; pattern: Pattern; flagged: boolean }[] = []
+  for (const [pattern, options] of Object.entries(EXERCISES) as [Pattern, ExerciseOption[]][]) {
+    for (const o of options) {
+      if (!o.equipment.includes(equipment)) continue
+      out.push({ name: o.name, pattern, flagged: o.avoidWith.some((i) => injuries.includes(i)) })
+    }
+  }
+  return out
+}
+
+export const EXERCISES: Record<Pattern, ExerciseOption[]> = {
   squat: [
     { name: 'Barbell back squat', equipment: ['full_gym'], avoidWith: ['knee', 'lower_back', 'hip'] },
     { name: 'Goblet squat', equipment: ['dumbbells', 'full_gym'], avoidWith: ['knee', 'hip'] },
@@ -198,6 +213,53 @@ function mobilityFor(sessionName: string): string[] {
   return MOBILITY.full
 }
 
+export interface ProgramPreset {
+  id: string
+  name: string
+  description: string
+  overrides: Partial<Pick<Profile, 'daysPerWeek' | 'equipment' | 'minutesPerSession'>>
+}
+
+/** Ready-made templates; each is generated through the same injury/equipment-aware builder. */
+export const PROGRAM_PRESETS: ProgramPreset[] = [
+  { id: 'recommended', name: 'Recommended for you', description: 'Built from your interview answers', overrides: {} },
+  { id: 'fullbody3', name: 'Full Body ×3', description: 'The classic 3-day plan — best value per gym hour', overrides: { daysPerWeek: 3 } },
+  { id: 'upperlower4', name: 'Upper / Lower ×4', description: '4 days, more volume per muscle', overrides: { daysPerWeek: 4 } },
+  { id: 'ppl6', name: 'Push / Pull / Legs ×6', description: '6 days for experienced lifters', overrides: { daysPerWeek: 6 } },
+  { id: 'minimal30', name: '30-min Express', description: 'Short sessions for packed weeks', overrides: { minutesPerSession: 30 } },
+  { id: 'travel', name: 'Bodyweight Travel', description: 'No equipment — hotel room friendly', overrides: { equipment: 'none' } },
+]
+
+export function buildPresetProgram(profile: Profile, presetId: string): WorkoutProgram {
+  const preset = PROGRAM_PRESETS.find((p) => p.id === presetId) ?? PROGRAM_PRESETS[0]
+  return buildProgram({ ...profile, ...preset.overrides })
+}
+
+/** HIIT is contraindicated (or needs medical sign-off) for these conditions — prescribe zone 2 instead. */
+export function hiitSafe(profile: Profile): boolean {
+  const flags: Profile['medicalConditions'] = ['heart_condition', 'hypertension', 'pregnancy']
+  return !profile.medicalConditions.some((c) => flags.includes(c))
+}
+
+export function buildCardio(profile: Profile) {
+  const zone2Sessions = profile.goal === 'fat_loss' ? 2 : 1
+  const stepsTarget = profile.goal === 'fat_loss' ? 9000 : 7500
+  const wantsHiit = profile.goal === 'fat_loss' || profile.goal === 'general_fitness'
+  const hiitSessionsPerWeek = wantsHiit && hiitSafe(profile) ? 1 : 0
+  return {
+    sessionsPerWeek: zone2Sessions,
+    description: `${zone2Sessions}× 20–30 min zone 2 (you can hold a conversation) — walk, cycle, row or swim. Target 150+ min of total weekly moderate activity (WHO guideline).`,
+    stepsTarget,
+    hiitSessionsPerWeek,
+    hiitDescription:
+      hiitSessionsPerWeek > 0
+        ? '1× 15–20 min HIIT: 6–8 rounds of 30 s hard / 90 s easy (bike, rower, hill walks). Time-efficient VO₂max work — but never on legs day, and only when sleep allows.'
+        : profile.medicalConditions.length > 0 && (profile.goal === 'fat_loss' || profile.goal === 'general_fitness')
+          ? 'HIIT is skipped due to your health screen — extra zone 2 delivers the same fat-loss result with less cardiovascular strain. Revisit with your physician’s clearance.'
+          : 'No HIIT prescribed for this goal — steps and zone 2 cover your conditioning; strength training stays the priority.',
+  }
+}
+
 export function buildProgram(profile: Profile): WorkoutProgram {
   const { splitName, templates } = splitFor(profile.daysPerWeek)
   const sessions: WorkoutSession[] = templates.map((t) => ({
@@ -210,13 +272,7 @@ export function buildProgram(profile: Profile): WorkoutProgram {
     mobilityFinisher: mobilityFor(t.name),
   }))
 
-  const cardioSessions = profile.goal === 'fat_loss' ? 2 : 1
-  const stepsTarget = profile.goal === 'fat_loss' ? 9000 : 7500
-  const cardio = {
-    sessionsPerWeek: cardioSessions,
-    description: `${cardioSessions}× 20–30 min zone 2 (you can hold a conversation) — walk, cycle, row or swim. Target 150+ min of total weekly moderate activity (WHO guideline).`,
-    stepsTarget,
-  }
+  const cardio = buildCardio(profile)
 
   const progressionRules = [
     'Double progression: when you hit the top of the rep range on all sets with good form, add weight (2.5–5%) or 1 rep next time.',

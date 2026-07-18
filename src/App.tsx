@@ -3,33 +3,37 @@ import { useAppStore } from './state/store'
 import IntakeWizard from './features/intake/IntakeWizard'
 import Dashboard from './features/dashboard/Dashboard'
 import Blueprint from './features/blueprint/Blueprint'
+import ActionView from './features/action/ActionView'
 import RoadmapView from './features/roadmap/RoadmapView'
 import NutritionView from './features/nutrition/NutritionView'
-import FatLossView from './features/fatloss/FatLossView'
+import ProgressView from './features/progress/ProgressView'
 import HabitsView from './features/habits/HabitsView'
 import SettingsView from './features/settings/SettingsView'
 
 export type Tab =
   | 'dashboard'
   | 'blueprint'
+  | 'action'
   | 'roadmap'
   | 'nutrition'
-  | 'fatloss'
+  | 'progress'
   | 'habits'
   | 'settings'
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'dashboard', label: 'Today', icon: '📆' },
-  { id: 'blueprint', label: 'Blueprint', icon: '🏋️' },
+  { id: 'blueprint', label: 'Blueprint', icon: '📋' },
+  { id: 'action', label: 'Action', icon: '🏋️' },
   { id: 'roadmap', label: 'Roadmap', icon: '🗺️' },
   { id: 'nutrition', label: 'Nutrition', icon: '🍽️' },
-  { id: 'fatloss', label: 'Fat Loss', icon: '🔥' },
+  { id: 'progress', label: 'Progress', icon: '📈' },
   { id: 'habits', label: 'Habits', icon: '✅' },
   { id: 'settings', label: 'Settings', icon: '⚙️' },
 ]
 
 export default function App() {
   const profile = useAppStore((s) => s.profile)
+  const activeWorkout = useAppStore((s) => s.activeWorkout)
   const [tab, setTab] = useState<Tab>('dashboard')
 
   if (!profile) {
@@ -42,32 +46,51 @@ export default function App() {
     )
   }
 
+  const workoutTakeover = activeWorkout !== null && tab === 'action'
+
   return (
     <>
       <Header />
+      {activeWorkout && tab !== 'action' && (
+        <div className="banner warn" role="status">
+          🏋️ Workout in progress —{' '}
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault()
+              setTab('action')
+            }}
+          >
+            return to logging
+          </a>
+        </div>
+      )}
       {tab === 'dashboard' && <Dashboard onNavigate={setTab} />}
-      {tab === 'blueprint' && <Blueprint />}
+      {tab === 'blueprint' && <Blueprint onNavigate={setTab} />}
+      {tab === 'action' && <ActionView />}
       {tab === 'roadmap' && <RoadmapView />}
       {tab === 'nutrition' && <NutritionView />}
-      {tab === 'fatloss' && <FatLossView />}
+      {tab === 'progress' && <ProgressView />}
       {tab === 'habits' && <HabitsView />}
       {tab === 'settings' && <SettingsView />}
       <Disclaimer />
-      <nav className="tabbar" aria-label="Main navigation">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            className={tab === t.id ? 'active' : ''}
-            onClick={() => setTab(t.id)}
-            aria-current={tab === t.id ? 'page' : undefined}
-          >
-            <span className="icon" aria-hidden>
-              {t.icon}
-            </span>
-            {t.label}
-          </button>
-        ))}
-      </nav>
+      {!workoutTakeover && (
+        <nav className="tabbar" aria-label="Main navigation">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              className={tab === t.id ? 'active' : ''}
+              onClick={() => setTab(t.id)}
+              aria-current={tab === t.id ? 'page' : undefined}
+            >
+              <span className="icon" aria-hidden>
+                {t.icon}
+              </span>
+              {t.label}
+            </button>
+          ))}
+        </nav>
+      )}
     </>
   )
 }

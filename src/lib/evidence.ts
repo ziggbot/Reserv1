@@ -52,4 +52,32 @@ export const EVIDENCE: Citation[] = [
     claim: 'Diet breaks / intermittent deficits can improve fat-loss efficiency and adherence',
     source: 'Byrne NM et al. (MATADOR study), Int J Obes 2018.',
   },
+  {
+    claim: 'Interval training (HIIT) is a time-efficient route to VO₂max and cardiometabolic health',
+    source: 'Batacan RB et al., Br J Sports Med 2017 meta-analysis; Weston KS et al. 2014.',
+  },
+  {
+    claim: 'Creatine monohydrate 3–5 g/day safely improves strength and lean mass with resistance training',
+    source: 'Kreider RB et al., ISSN Position Stand on creatine, J Int Soc Sports Nutr 2017; Antonio J et al. 2021 safety review.',
+  },
+  {
+    claim: 'Vitamin D supplementation is warranted when sun exposure is limited; deficiency impairs muscle function',
+    source: 'Holick MF, Endocrine Society guideline 2011; Chiang CM et al., J Strength Cond Res 2017.',
+  },
+  {
+    claim: 'Omega-3 (EPA/DHA) supports cardiovascular health and may enhance muscle anabolism',
+    source: 'ISSFAL recommendations; Smith GI et al., Am J Clin Nutr 2011.',
+  },
+  {
+    claim: 'Caffeine 2–6 mg/kg acutely improves strength and endurance performance',
+    source: 'Guest NS et al., ISSN Position Stand on caffeine, J Int Soc Sports Nutr 2021.',
+  },
+  {
+    claim: 'Magnesium supplementation can modestly improve sleep quality in short sleepers',
+    source: 'Abbasi B et al., J Res Med Sci 2012; Mah J & Pitre T, BMC Complement Med 2021 systematic review.',
+  },
+  {
+    claim: 'Probiotics/fermented foods: emerging evidence for immune and gut-health benefits in athletes',
+    source: 'Jäger R et al., ISSN Position Stand on probiotics, J Int Soc Sports Nutr 2019.',
+  },
 ]

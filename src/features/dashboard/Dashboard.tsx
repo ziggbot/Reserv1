@@ -7,13 +7,22 @@ import { macroTargets } from '../../lib/calculations'
 import type { Tab } from '../../App'
 
 export default function Dashboard({ onNavigate }: { onNavigate: (t: Tab) => void }) {
-  const { profile, weighIns, workoutLog, habitChecks, planStartDate, addWeighIn, toggleWorkout, toggleHabit } =
-    useAppStore()
+  const {
+    profile,
+    weighIns,
+    workoutLog,
+    habitChecks,
+    planStartDate,
+    customProgram,
+    addWeighIn,
+    toggleWorkout,
+    toggleHabit,
+  } = useAppStore()
   const [weight, setWeight] = useState('')
   const today = todayIso()
 
   if (!profile) return null
-  const program = buildProgram(profile)
+  const program = customProgram ?? buildProgram(profile)
   const habitPlan = buildHabitPlan(profile)
   const targets = macroTargets(profile)
 
@@ -62,8 +71,8 @@ export default function Dashboard({ onNavigate }: { onNavigate: (t: Tab) => void
         {analysis && analysis.status !== 'insufficient_data' && (
           <p className="small">
             Trend check: {statusPill} — see{' '}
-            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('fatloss') }}>
-              Fat Loss
+            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('progress') }}>
+              Progress
             </a>{' '}
             for the recommendation.
           </p>
@@ -104,7 +113,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (t: Tab) => void
       <div className="card">
         <h2>🏋️ This week’s sessions</h2>
         <p className="muted small">
-          {program.splitName} · check off what you complete (today: {today})
+          {program.splitName} · start a logged workout in Action, or tick off sessions done elsewhere.
         </p>
         {program.sessions.map((s) => (
           <div className="check-row" key={s.name}>
@@ -119,6 +128,9 @@ export default function Dashboard({ onNavigate }: { onNavigate: (t: Tab) => void
             </label>
           </div>
         ))}
+        <button className="primary" onClick={() => onNavigate('action')}>
+          ▶ Start a workout
+        </button>
       </div>
 
       <div className="card">
