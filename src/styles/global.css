@@ -397,6 +397,50 @@ details.evidence summary { cursor: pointer; color: var(--text-dim); font-size: 0
   font-variant-numeric: tabular-nums;
 }
 
+/* Category segmented control */
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin: 10px 0 4px;
+}
+.segmented button {
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  border-radius: 10px;
+  padding: 9px 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.segmented button.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Activity log row */
+.log-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.activity-stepper { max-width: 150px; }
+.activity-stepper input { padding: 10px 2px; }
+
+/* Training timeline */
+.timeline { border-left: 2px solid var(--border); margin-left: 10px; padding-left: 0; }
+.timeline-entry { display: flex; gap: 10px; padding: 8px 0 8px 12px; position: relative; }
+.timeline-entry::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 18px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.timeline-icon { font-size: 1.2rem; flex-shrink: 0; }
+.timeline-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
 /* Weight chart */
 .weight-chart { width: 100%; min-width: 480px; height: auto; }
 .chart-grid { stroke: var(--border); stroke-width: 1; }

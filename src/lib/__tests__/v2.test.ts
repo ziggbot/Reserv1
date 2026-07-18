@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildOverview } from '../overview'
 import { recommendSupplements } from '../supplements'
 import { buildCardio, buildPresetProgram, exerciseLibrary, hiitSafe } from '../programs'
+import { cardioProposals, enduranceProposals, stretchProposals } from '../activities'
 import { useAppStore } from '../../state/store'
 import type { Profile, WorkoutSession } from '../types'
 
@@ -106,6 +107,46 @@ describe('presets & exercise library', () => {
   })
 })
 
+describe('activity proposals', () => {
+  it('includes HIIT for a healthy fat-loss profile, drops it for hypertension', () => {
+    expect(cardioProposals(base).some((p) => p.name.includes('HIIT'))).toBe(true)
+    expect(
+      cardioProposals({ ...base, medicalConditions: ['hypertension'] }).some((p) => p.name.includes('HIIT')),
+    ).toBe(false)
+  })
+  it('scales endurance to fitness level', () => {
+    const beg = enduranceProposals({ ...base, fitnessLevel: 'beginner' })
+    const int = enduranceProposals(base)
+    expect(beg.find((p) => p.name.includes('Long zone-2'))!.durationMin).toBeLessThan(
+      int.find((p) => p.name.includes('Long zone-2'))!.durationMin,
+    )
+    expect(beg.some((p) => p.name.includes('Run/walk'))).toBe(true)
+  })
+  it('gives desk workers a desk-specific stretch routine', () => {
+    expect(stretchProposals(base).some((p) => p.name.includes('Desk-body'))).toBe(true)
+    const active = stretchProposals({ ...base, lifestyle: { ...base.lifestyle, deskJob: false } })
+    expect(active.some((p) => p.name.includes('Hip opener'))).toBe(true)
+  })
+  it('every proposal has steps and a positive duration', () => {
+    for (const p of [...cardioProposals(base), ...enduranceProposals(base), ...stretchProposals(base)]) {
+      expect(p.steps.length).toBeGreaterThan(0)
+      expect(p.durationMin).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('logActivity', () => {
+  it('stores a categorized timeline entry and a workout-log entry', () => {
+    useAppStore.getState().logActivity('cardio', 'Zone-2 walk / cycle / row', 30, '2026-07-17')
+    const st = useAppStore.getState()
+    const entry = st.completedWorkouts.find((w) => w.sessionName === 'Zone-2 walk / cycle / row')!
+    expect(entry.category).toBe('cardio')
+    expect(entry.durationMin).toBe(30)
+    expect(entry.totalVolumeKg).toBe(0)
+    expect(st.workoutLog.some((e) => e.date === '2026-07-17')).toBe(true)
+  })
+})
+
 describe('workout store flow', () => {
   const session: WorkoutSession = {
     name: 'Test Session',
@@ -141,7 +182,8 @@ describe('workout store flow', () => {
     expect(done!.totalSets).toBe(3) // only completed sets count
     st = useAppStore.getState()
     expect(st.activeWorkout).toBeNull()
-    expect(st.completedWorkouts).toHaveLength(1)
+    expect(st.completedWorkouts.filter((w) => w.sessionName === 'Test Session')).toHaveLength(1)
+    expect(done!.category).toBe('strength')
     expect(st.workoutLog.some((e) => e.date === '2026-07-18' && e.sessionName === 'Test Session')).toBe(true)
   })
 

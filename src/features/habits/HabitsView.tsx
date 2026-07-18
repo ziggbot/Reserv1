@@ -31,7 +31,8 @@ export default function HabitsView() {
       </div>
 
       <div className="card">
-        <h2>🧱 Your habits (check daily on the Today tab)</h2>
+        <h2>🧱 Today’s checklist ({todayIso()})</h2>
+        <p className="muted small">Check habits off here every day — streaks build below each one.</p>
         {plan.habits.map((h) => {
           const checks = habitChecks[h.id] ?? []
           const streak = currentStreak(checks, today)

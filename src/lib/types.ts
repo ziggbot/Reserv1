@@ -170,13 +170,24 @@ export interface ActiveWorkout {
   exercises: LoggedExercise[]
 }
 
+export type ActivityCategory = 'strength' | 'cardio' | 'endurance' | 'stretch'
+
 export interface CompletedWorkout {
   date: string // ISO yyyy-mm-dd
   sessionName: string
+  category: ActivityCategory
   durationMin: number
   exercises: LoggedExercise[]
   totalVolumeKg: number
   totalSets: number
+}
+
+export interface ActivityProposal {
+  name: string
+  category: Exclude<ActivityCategory, 'strength'>
+  durationMin: number
+  description: string
+  steps: string[]
 }
 
 export interface Habit {

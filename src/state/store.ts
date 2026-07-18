@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type {
   ActiveWorkout,
+  ActivityCategory,
   CompletedWorkout,
   Profile,
   WeighIn,
@@ -59,6 +60,7 @@ interface AppState {
   addActiveSet: (exIdx: number) => void
   cancelWorkout: () => void
   finishWorkout: (nowIso: string) => CompletedWorkout | null
+  logActivity: (category: ActivityCategory, name: string, durationMin: number, date: string) => void
 }
 
 export function todayIso(): string {
@@ -190,6 +192,7 @@ export const useAppStore = create<AppState>()(
         const completed: CompletedWorkout = {
           date: nowIso,
           sessionName: s.activeWorkout.sessionName,
+          category: 'strength',
           durationMin,
           exercises: done,
           totalVolumeKg,
@@ -209,6 +212,25 @@ export const useAppStore = create<AppState>()(
         })
         return completed
       },
+
+      logActivity: (category, name, durationMin, date) =>
+        set((s) => ({
+          completedWorkouts: [
+            ...s.completedWorkouts,
+            {
+              date,
+              sessionName: name,
+              category,
+              durationMin,
+              exercises: [],
+              totalVolumeKg: 0,
+              totalSets: 0,
+            },
+          ],
+          workoutLog: s.workoutLog.some((e) => e.date === date && e.sessionName === name)
+            ? s.workoutLog
+            : [...s.workoutLog, { date, sessionName: name }],
+        })),
     }),
     { name: 'fitblueprint-v1', storage: createJSONStorage(safeStorage) },
   ),

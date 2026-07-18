@@ -1,8 +1,9 @@
-import { useAppStore } from '../../state/store'
+import { useAppStore, todayIso, weeksSince } from '../../state/store'
 import { buildProgram } from '../../lib/programs'
 import { buildNutritionPlan } from '../../lib/calculations'
 import { buildHabitPlan } from '../../lib/habits'
 import { buildOverview } from '../../lib/overview'
+import { buildRoadmap } from '../../lib/roadmap'
 import EvidencePanel from '../shared/EvidencePanel'
 import type { Tab } from '../../App'
 
@@ -15,17 +16,20 @@ const GOAL_LABEL: Record<string, string> = {
 
 export default function Blueprint({ onNavigate }: { onNavigate: (t: Tab) => void }) {
   const profile = useAppStore((s) => s.profile)
+  const planStartDate = useAppStore((s) => s.planStartDate)
   if (!profile) return null
 
   const program = buildProgram(profile)
   const nutrition = buildNutritionPlan(profile)
   const habits = buildHabitPlan(profile)
   const overview = buildOverview(profile)
+  const roadmap = buildRoadmap(profile)
+  const currentWeek = weeksSince(planStartDate, todayIso()) + 1
 
   return (
     <main>
       <div className="card">
-        <h1>Your Fitness Blueprint</h1>
+        <h1>Blueprint & Roadmap</h1>
         <p className="muted">
           {profile.age} y · {profile.heightCm} cm · {profile.weightKg} kg · {profile.fitnessLevel} · goal:{' '}
           <strong>{GOAL_LABEL[profile.goal]}</strong>
@@ -53,6 +57,62 @@ export default function Blueprint({ onNavigate }: { onNavigate: (t: Tab) => void
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="card">
+        <h2>🗺️ Roadmap — the realistic path</h2>
+        <p>{roadmap.summary}</p>
+        <div className="stat-row">
+          <div className="stat">
+            <div className="value">{currentWeek}</div>
+            <div className="label">current week</div>
+          </div>
+          <div className="stat">
+            <div className="value">{roadmap.etaWeeks ?? '—'}</div>
+            <div className="label">weeks to goal</div>
+          </div>
+          <div className="stat">
+            <div className="value">
+              {roadmap.weeklyRateKg > 0 ? '+' : ''}
+              {roadmap.weeklyRateKg}
+            </div>
+            <div className="label">kg / week pace</div>
+          </div>
+        </div>
+        {roadmap.phases.map((p) => (
+          <div className="phase" key={p.name}>
+            <div className="weeks">{p.weeks}</div>
+            <h3>{p.name}</h3>
+            <p>{p.focus}</p>
+            <ul>
+              <li>
+                <strong>Training:</strong> {p.trainingEmphasis}
+              </li>
+              <li>
+                <strong>Nutrition:</strong> {p.nutritionEmphasis}
+              </li>
+              <li>
+                <strong>Checkpoints:</strong> {p.checkpoints.join(' · ')}
+              </li>
+            </ul>
+          </div>
+        ))}
+        <div className="banner info">
+          This is the <strong>fastest realistic path</strong> — the rates come from studies on preserving
+          muscle, not marketing. Faster trades muscle, adherence and rebound risk for a calendar date.
+        </div>
+        <details className="evidence">
+          <summary>📋 Weekly tracking protocol</summary>
+          <ul>
+            {roadmap.trackingProtocol.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+          <p className="muted small">
+            Log weigh-ins and sessions in the Progress and Action tabs — the engine turns them into
+            adjustment calls automatically.
+          </p>
+        </details>
       </div>
 
       <div className="card">

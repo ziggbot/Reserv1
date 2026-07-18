@@ -1,9 +1,17 @@
+import { useState } from 'react'
 import { useAppStore, todayIso, weeksSince } from '../../state/store'
 import { analyzeProgress, FAT_LOSS_PILLARS, rollingAverage } from '../../lib/fatloss'
 import { macroTargets, targetWeeklyLossKg, tdee } from '../../lib/calculations'
 import { buildHabitPlan, currentStreak } from '../../lib/habits'
 import EvidencePanel from '../shared/EvidencePanel'
-import type { WeighIn } from '../../lib/types'
+import type { ActivityCategory, CompletedWorkout, WeighIn } from '../../lib/types'
+
+const CATEGORY_META: Record<ActivityCategory, { icon: string; label: string }> = {
+  strength: { icon: '🏋️', label: 'Strength' },
+  cardio: { icon: '🫀', label: 'Cardio' },
+  endurance: { icon: '🏃', label: 'Endurance' },
+  stretch: { icon: '🧘', label: 'Stretch' },
+}
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   insufficient_data: { label: 'Collecting data', cls: 'info' },
@@ -14,10 +22,13 @@ const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
 }
 
 export default function ProgressView() {
-  const { profile, weighIns, planStartDate, completedWorkouts, habitChecks } = useAppStore()
+  const { profile, weighIns, planStartDate, completedWorkouts, workoutLog, habitChecks, addWeighIn } =
+    useAppStore()
+  const [weight, setWeight] = useState('')
   if (!profile) return null
 
   const today = todayIso()
+  const todayWeighIn = weighIns.find((w) => w.date === today)
   const weeks = weeksSince(planStartDate, today)
   const analysis = analyzeProgress(weighIns, today, profile.weightKg, weeks)
   const status = STATUS_LABEL[analysis.status]
@@ -62,12 +73,45 @@ export default function ProgressView() {
       </div>
 
       <div className="card">
+        <h2>⚖️ Morning weigh-in</h2>
+        {todayWeighIn ? (
+          <p>
+            Logged <strong>{todayWeighIn.weightKg} kg</strong> today. Only the weekly average matters —
+            single days are water, not fat.
+          </p>
+        ) : (
+          <div className="weigh-form">
+            <input
+              type="number"
+              step="0.1"
+              placeholder="Weight (kg)"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              aria-label="Today's weight in kg"
+            />
+            <button
+              className="primary"
+              disabled={!weight || Number(weight) < 35 || Number(weight) > 300}
+              onClick={() => {
+                addWeighIn({ date: today, weightKg: Number(weight) })
+                setWeight('')
+              }}
+            >
+              Log
+            </button>
+          </div>
+        )}
+      </div>
+
+      <TrainingTimeline completedWorkouts={completedWorkouts} workoutLog={workoutLog} />
+
+      <div className="card">
         <h2>⚖️ Weight trend</h2>
         {weighIns.length >= 2 ? (
           <WeightChart weighIns={weighIns} goalWeightKg={profile.goalWeightKg} today={today} />
         ) : (
           <p className="muted">
-            Log at least two weigh-ins on the Today tab and your trend chart appears here.
+            Log at least two weigh-ins above and your trend chart appears here.
           </p>
         )}
       </div>
@@ -164,6 +208,73 @@ export default function ProgressView() {
 
       <EvidencePanel />
     </main>
+  )
+}
+
+/** Chronological feed of everything trained — logged workouts plus plain check-offs. */
+function TrainingTimeline({
+  completedWorkouts,
+  workoutLog,
+}: {
+  completedWorkouts: CompletedWorkout[]
+  workoutLog: { date: string; sessionName: string }[]
+}) {
+  // Check-offs without a matching logged workout still deserve a timeline entry.
+  const checkedOnly = workoutLog.filter(
+    (e) => !completedWorkouts.some((w) => w.date === e.date && w.sessionName === e.sessionName),
+  )
+  const entries = [
+    ...completedWorkouts.map((w) => ({ ...w, checkedOnly: false })),
+    ...checkedOnly.map((e) => ({
+      date: e.date,
+      sessionName: e.sessionName,
+      category: 'strength' as ActivityCategory,
+      durationMin: 0,
+      totalSets: 0,
+      totalVolumeKg: 0,
+      exercises: [],
+      checkedOnly: true,
+    })),
+  ].sort((a, b) => b.date.localeCompare(a.date))
+
+  return (
+    <div className="card">
+      <h2>🗓️ Training timeline</h2>
+      {entries.length === 0 ? (
+        <p className="muted">
+          Every session you log in the Action tab lands here — strength, cardio, endurance and
+          stretching, newest first.
+        </p>
+      ) : (
+        <div className="timeline">
+          {entries.slice(0, 30).map((e, i) => {
+            const meta = CATEGORY_META[e.category ?? 'strength']
+            return (
+              <div className="timeline-entry" key={`${e.date}-${e.sessionName}-${i}`}>
+                <span className="timeline-icon" aria-hidden>
+                  {meta.icon}
+                </span>
+                <div className="timeline-body">
+                  <div className="timeline-head">
+                    <strong>{e.sessionName}</strong>
+                    <span className={`pill ${e.category === 'strength' ? 'info' : 'ok'}`}>{meta.label}</span>
+                  </div>
+                  <div className="muted small">
+                    {e.date}
+                    {e.checkedOnly
+                      ? ' · checked off'
+                      : e.category === 'strength'
+                        ? ` · ${e.durationMin} min · ${e.totalSets} sets · ${e.totalVolumeKg.toLocaleString()} kg volume`
+                        : ` · ${e.durationMin} min`}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+          {entries.length > 30 && <p className="muted small">Showing the latest 30 sessions.</p>}
+        </div>
+      )}
+    </div>
   )
 }
 

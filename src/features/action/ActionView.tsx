@@ -6,14 +6,29 @@ import {
   exerciseLibrary,
   PROGRAM_PRESETS,
 } from '../../lib/programs'
-import type { CompletedWorkout, WorkoutProgram, WorkoutSession } from '../../lib/types'
+import { proposalsFor } from '../../lib/activities'
+import type {
+  ActivityCategory,
+  ActivityProposal,
+  CompletedWorkout,
+  WorkoutProgram,
+  WorkoutSession,
+} from '../../lib/types'
 
 type Mode = 'list' | 'edit'
+
+const CATEGORIES: { id: ActivityCategory; icon: string; label: string }[] = [
+  { id: 'strength', icon: '🏋️', label: 'Strength' },
+  { id: 'cardio', icon: '🫀', label: 'Cardio' },
+  { id: 'endurance', icon: '🏃', label: 'Endurance' },
+  { id: 'stretch', icon: '🧘', label: 'Stretch' },
+]
 
 export default function ActionView() {
   const { profile, customProgram, setCustomProgram, activeWorkout, completedWorkouts, startWorkout } =
     useAppStore()
   const [mode, setMode] = useState<Mode>('list')
+  const [category, setCategory] = useState<ActivityCategory>('strength')
   const [presetId, setPresetId] = useState('recommended')
   const [summary, setSummary] = useState<CompletedWorkout | null>(null)
 
@@ -38,10 +53,39 @@ export default function ActionView() {
       />
     )
 
+  const categoryPicker = (
+    <div className="segmented" role="tablist" aria-label="Training category">
+      {CATEGORIES.map((c) => (
+        <button
+          key={c.id}
+          role="tab"
+          aria-selected={category === c.id}
+          className={category === c.id ? 'active' : ''}
+          onClick={() => setCategory(c.id)}
+        >
+          <span aria-hidden>{c.icon}</span> {c.label}
+        </button>
+      ))}
+    </div>
+  )
+
+  if (category !== 'strength') {
+    return (
+      <main>
+        <div className="card">
+          <h1>Action</h1>
+          {categoryPicker}
+        </div>
+        <ActivitySection category={category} />
+      </main>
+    )
+  }
+
   return (
     <main>
       <div className="card">
-        <h1>Action — your training programs</h1>
+        <h1>Action</h1>
+        {categoryPicker}
         <p className="muted">
           Pick a preset, customize any session, and hit <strong>Start workout</strong> at the gym — each
           set prefills what you lifted last time, so logging is two taps, not ten.
@@ -155,6 +199,86 @@ export default function ActionView() {
         </div>
       )}
     </main>
+  )
+}
+
+/* ---------------- Cardio / endurance / stretch proposals ---------------- */
+
+const SECTION_INTRO: Record<Exclude<ActivityCategory, 'strength'>, string> = {
+  cardio:
+    'Conditioning sessions that fit around your strength days. Do them, tap Log, and they land on your Progress timeline.',
+  endurance:
+    'Longer engine-building work — one of these a week compounds into a big aerobic base. Scaled to your level.',
+  stretch:
+    'Short mobility routines. The best one is the one you actually do — pick by how your body feels today.',
+}
+
+function ActivitySection({ category }: { category: Exclude<ActivityCategory, 'strength'> }) {
+  const profile = useAppStore((s) => s.profile)!
+  const proposals = proposalsFor(profile, category)
+  return (
+    <>
+      <p className="muted" style={{ margin: '0 4px 4px' }}>
+        {SECTION_INTRO[category]}
+      </p>
+      {proposals.map((p) => (
+        <ActivityCard key={p.name} proposal={p} />
+      ))}
+    </>
+  )
+}
+
+function ActivityCard({ proposal }: { proposal: ActivityProposal }) {
+  const logActivity = useAppStore((s) => s.logActivity)
+  const [minutes, setMinutes] = useState(proposal.durationMin)
+  const [logged, setLogged] = useState(false)
+
+  return (
+    <div className="card">
+      <h2>
+        {proposal.name} <span className="pill info">~{proposal.durationMin} min</span>
+      </h2>
+      <p className="muted">{proposal.description}</p>
+      <ol>
+        {proposal.steps.map((s) => (
+          <li key={s}>{s}</li>
+        ))}
+      </ol>
+      {logged ? (
+        <p className="banner ok" role="status">
+          ✅ Logged {minutes} min — it's on your Progress timeline.
+        </p>
+      ) : (
+        <div className="log-row">
+          <div className="stepper activity-stepper">
+            <button type="button" aria-label={`Decrease minutes for ${proposal.name}`} onClick={() => setMinutes((m) => Math.max(5, m - 5))}>
+              −
+            </button>
+            <input
+              type="number"
+              inputMode="numeric"
+              value={minutes}
+              aria-label={`Minutes for ${proposal.name}`}
+              onChange={(e) => setMinutes(Math.max(0, Number(e.target.value) || 0))}
+            />
+            <button type="button" aria-label={`Increase minutes for ${proposal.name}`} onClick={() => setMinutes((m) => m + 5)}>
+              +
+            </button>
+          </div>
+          <span className="muted small">min</span>
+          <button
+            className="primary"
+            disabled={minutes <= 0}
+            onClick={() => {
+              logActivity(proposal.category, proposal.name, minutes, todayIso())
+              setLogged(true)
+            }}
+          >
+            ✓ Log session
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 

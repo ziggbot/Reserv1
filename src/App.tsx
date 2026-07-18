@@ -1,32 +1,20 @@
 import { useState } from 'react'
 import { useAppStore } from './state/store'
 import IntakeWizard from './features/intake/IntakeWizard'
-import Dashboard from './features/dashboard/Dashboard'
 import Blueprint from './features/blueprint/Blueprint'
 import ActionView from './features/action/ActionView'
-import RoadmapView from './features/roadmap/RoadmapView'
 import NutritionView from './features/nutrition/NutritionView'
 import ProgressView from './features/progress/ProgressView'
 import HabitsView from './features/habits/HabitsView'
 import SettingsView from './features/settings/SettingsView'
 
-export type Tab =
-  | 'dashboard'
-  | 'blueprint'
-  | 'action'
-  | 'roadmap'
-  | 'nutrition'
-  | 'progress'
-  | 'habits'
-  | 'settings'
+export type Tab = 'blueprint' | 'action' | 'progress' | 'nutrition' | 'habits' | 'settings'
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: 'dashboard', label: 'Today', icon: '📆' },
-  { id: 'blueprint', label: 'Blueprint', icon: '📋' },
+  { id: 'blueprint', label: 'Blueprint & Roadmap', icon: '📋' },
   { id: 'action', label: 'Action', icon: '🏋️' },
-  { id: 'roadmap', label: 'Roadmap', icon: '🗺️' },
-  { id: 'nutrition', label: 'Nutrition', icon: '🍽️' },
   { id: 'progress', label: 'Progress', icon: '📈' },
+  { id: 'nutrition', label: 'Nutrition', icon: '🍽️' },
   { id: 'habits', label: 'Habits', icon: '✅' },
   { id: 'settings', label: 'Settings', icon: '⚙️' },
 ]
@@ -34,7 +22,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 export default function App() {
   const profile = useAppStore((s) => s.profile)
   const activeWorkout = useAppStore((s) => s.activeWorkout)
-  const [tab, setTab] = useState<Tab>('dashboard')
+  const [tab, setTab] = useState<Tab>('blueprint')
 
   if (!profile) {
     return (
@@ -65,10 +53,8 @@ export default function App() {
           </a>
         </div>
       )}
-      {tab === 'dashboard' && <Dashboard onNavigate={setTab} />}
       {tab === 'blueprint' && <Blueprint onNavigate={setTab} />}
       {tab === 'action' && <ActionView />}
-      {tab === 'roadmap' && <RoadmapView />}
       {tab === 'nutrition' && <NutritionView />}
       {tab === 'progress' && <ProgressView />}
       {tab === 'habits' && <HabitsView />}
