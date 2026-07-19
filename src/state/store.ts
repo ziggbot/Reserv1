@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import { SEED_MEMORY } from '../lib/threeDayFullBody'
 import type {
   ActiveWorkout,
   ActivityCategory,
@@ -130,14 +131,16 @@ export const useAppStore = create<AppState>()(
             sessionName: session.name,
             startedAt: new Date().toISOString(),
             exercises: session.exercises.map((ex) => {
-              // Prefill priority: same set last time → last set last time → rep target.
-              const prev = memory[ex.name]
+              // Prefill priority: logged history → seeded defaults from the user's
+              // imported program → rep target. Same set index first, then last set.
+              const prev = memory[ex.name] ?? SEED_MEMORY[ex.name]
               const lastSet = prev?.[prev.length - 1]
               const targetReps = firstNumber(ex.reps)
               const setCount = Math.max(ex.sets, prev?.length ?? 0)
               return {
                 name: ex.name,
                 targetReps: ex.reps,
+                linkUrl: ex.linkUrl,
                 sets: Array.from({ length: setCount }, (_, i) => ({
                   weightKg: prev?.[i]?.weightKg ?? lastSet?.weightKg ?? null,
                   reps: prev?.[i]?.reps ?? lastSet?.reps ?? targetReps,

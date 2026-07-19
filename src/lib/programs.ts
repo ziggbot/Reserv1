@@ -235,6 +235,25 @@ export function buildPresetProgram(profile: Profile, presetId: string): WorkoutP
   return buildProgram({ ...profile, ...preset.overrides })
 }
 
+/** Health-screen cautions shown with any strength program. */
+export function buildCautions(profile: Profile): string[] {
+  const cautions: string[] = []
+  if (profile.injuries.length > 0) {
+    cautions.push(
+      `You reported ${profile.injuries.map((i) => i.replace('_', ' ')).join(', ')} issue(s). Work in a pain-free range; pain above 3/10 that lingers next day means back off and see a physio.`,
+    )
+  }
+  if (profile.medicalConditions.length > 0) {
+    cautions.push(
+      'You flagged a medical condition — get clearance from your physician before starting, and stop any session that causes chest pain, dizziness or unusual shortness of breath.',
+    )
+  }
+  if (profile.medicalConditions.includes('hypertension')) {
+    cautions.push('With hypertension: avoid breath-holding (Valsalva) on heavy lifts — keep breathing, keep loads moderate, rest fully between sets.')
+  }
+  return cautions
+}
+
 /** HIIT is contraindicated (or needs medical sign-off) for these conditions — prescribe zone 2 instead. */
 export function hiitSafe(profile: Profile): boolean {
   const flags: Profile['medicalConditions'] = ['heart_condition', 'hypertension', 'pregnancy']
@@ -280,20 +299,7 @@ export function buildProgram(profile: Profile): WorkoutProgram {
     'A grinding, form-breaking rep counts as a failed rep. Stay 1–3 reps shy of failure on most sets.',
   ]
 
-  const cautions: string[] = []
-  if (profile.injuries.length > 0) {
-    cautions.push(
-      `Exercise selection avoids loading your reported ${profile.injuries.map((i) => i.replace('_', ' ')).join(', ')} issue(s). Work in a pain-free range; pain above 3/10 that lingers next day means back off and see a physio.`,
-    )
-  }
-  if (profile.medicalConditions.length > 0) {
-    cautions.push(
-      'You flagged a medical condition — get clearance from your physician before starting, and stop any session that causes chest pain, dizziness or unusual shortness of breath.',
-    )
-  }
-  if (profile.medicalConditions.includes('hypertension')) {
-    cautions.push('With hypertension: avoid breath-holding (Valsalva) on heavy lifts — keep breathing, keep loads moderate, rest fully between sets.')
-  }
+  const cautions = buildCautions(profile)
 
   return {
     splitName,

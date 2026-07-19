@@ -1,5 +1,5 @@
 import { useAppStore, todayIso, weeksSince } from '../../state/store'
-import { buildProgram } from '../../lib/programs'
+import { defaultProgram } from '../../lib/threeDayFullBody'
 import { buildNutritionPlan } from '../../lib/calculations'
 import { buildHabitPlan } from '../../lib/habits'
 import { buildOverview } from '../../lib/overview'
@@ -17,9 +17,10 @@ const GOAL_LABEL: Record<string, string> = {
 export default function Blueprint({ onNavigate }: { onNavigate: (t: Tab) => void }) {
   const profile = useAppStore((s) => s.profile)
   const planStartDate = useAppStore((s) => s.planStartDate)
+  const customProgram = useAppStore((s) => s.customProgram)
   if (!profile) return null
 
-  const program = buildProgram(profile)
+  const program = defaultProgram(profile, customProgram)
   const nutrition = buildNutritionPlan(profile)
   const habits = buildHabitPlan(profile)
   const overview = buildOverview(profile)

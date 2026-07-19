@@ -69,6 +69,7 @@ export interface ExercisePrescription {
   reps: string
   rpe: string
   notes?: string
+  linkUrl?: string
 }
 
 export interface WorkoutSession {
@@ -162,6 +163,7 @@ export interface LoggedExercise {
   name: string
   targetReps: string
   sets: LoggedSet[]
+  linkUrl?: string
 }
 
 export interface ActiveWorkout {

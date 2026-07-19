@@ -7,6 +7,7 @@ import {
   PROGRAM_PRESETS,
 } from '../../lib/programs'
 import { proposalsFor } from '../../lib/activities'
+import { defaultProgram } from '../../lib/threeDayFullBody'
 import type {
   ActivityCategory,
   ActivityProposal,
@@ -34,7 +35,7 @@ export default function ActionView() {
 
   if (!profile) return null
 
-  const program: WorkoutProgram = customProgram ?? buildProgram(profile)
+  const program: WorkoutProgram = defaultProgram(profile, customProgram)
 
   const lastCompletedFor = (sessionName: string): CompletedWorkout | undefined =>
     [...completedWorkouts].reverse().find((w) => w.sessionName === sessionName)
@@ -91,33 +92,55 @@ export default function ActionView() {
           set prefills what you lifted last time, so logging is two taps, not ten.
         </p>
         <div className="choice-grid">
-          {PROGRAM_PRESETS.map((p) => (
+          <button
+            type="button"
+            className={`choice ${!customProgram ? 'selected' : ''}`}
+            onClick={() => {
+              setPresetId('threeday')
+              setCustomProgram(null)
+            }}
+          >
+            3 Day Full Body
+            <span className="desc">Your own program — latest weights prefilled</span>
+          </button>
+          {PROGRAM_PRESETS.filter((p) => p.id !== 'recommended').map((p) => (
             <button
               key={p.id}
               type="button"
-              className={`choice ${presetId === p.id && !customProgram ? 'selected' : ''}`}
+              className={`choice ${presetId === p.id && customProgram ? 'selected' : ''}`}
               onClick={() => {
                 setPresetId(p.id)
-                setCustomProgram(p.id === 'recommended' ? null : buildPresetProgram(profile, p.id))
+                setCustomProgram(buildPresetProgram(profile, p.id))
               }}
             >
               {p.name}
               <span className="desc">{p.description}</span>
             </button>
           ))}
+          <button
+            type="button"
+            className={`choice ${presetId === 'generated' && customProgram ? 'selected' : ''}`}
+            onClick={() => {
+              setPresetId('generated')
+              setCustomProgram(buildProgram(profile))
+            }}
+          >
+            Generated for you
+            <span className="desc">Built from your interview answers</span>
+          </button>
         </div>
         {customProgram && (
           <p className="small muted" style={{ marginTop: 8 }}>
-            Using a customized program.{' '}
+            Using a {presetId === 'generated' ? 'generated' : 'preset/customized'} program.{' '}
             <a
               href="#"
               onClick={(e) => {
                 e.preventDefault()
                 setCustomProgram(null)
-                setPresetId('recommended')
+                setPresetId('threeday')
               }}
             >
-              Reset to recommended
+              Back to 3 Day Full Body
             </a>
           </p>
         )}
@@ -154,7 +177,16 @@ export default function ActionView() {
                 <tbody>
                   {s.exercises.map((e, i) => (
                     <tr key={i}>
-                      <td>{e.name}</td>
+                      <td>
+                        {e.linkUrl ? (
+                          <a href={e.linkUrl} target="_blank" rel="noopener noreferrer">
+                            {e.name} ↗
+                          </a>
+                        ) : (
+                          e.name
+                        )}
+                        {e.notes && <div className="muted small">{e.notes}</div>}
+                      </td>
                       <td>{e.sets}</td>
                       <td>{e.reps}</td>
                       <td>{e.rpe}</td>
@@ -444,7 +476,14 @@ function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedWorkout)
       {activeWorkout.exercises.map((ex, exIdx) => (
         <div className="card" key={exIdx}>
           <h3>
-            {ex.name} <span className="muted small">target {ex.targetReps}</span>
+            {ex.linkUrl ? (
+              <a href={ex.linkUrl} target="_blank" rel="noopener noreferrer">
+                {ex.name} ↗
+              </a>
+            ) : (
+              ex.name
+            )}{' '}
+            <span className="muted small">target {ex.targetReps}</span>
           </h3>
           <div className="set-header">
             <span>Set</span>
