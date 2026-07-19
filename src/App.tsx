@@ -4,17 +4,21 @@ import IntakeWizard from './features/intake/IntakeWizard'
 import Blueprint from './features/blueprint/Blueprint'
 import ActionView from './features/action/ActionView'
 import NutritionView from './features/nutrition/NutritionView'
+import LongevityView from './features/longevity/LongevityView'
 import ProgressView from './features/progress/ProgressView'
 import HabitsView from './features/habits/HabitsView'
 import SettingsView from './features/settings/SettingsView'
+import AccountGate from './features/auth/AccountGate'
+import { clearSession, getSession } from './state/session'
 
-export type Tab = 'blueprint' | 'action' | 'progress' | 'nutrition' | 'habits' | 'settings'
+export type Tab = 'blueprint' | 'action' | 'progress' | 'nutrition' | 'longevity' | 'habits' | 'settings'
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'blueprint', label: 'Blueprint & Roadmap', icon: '📋' },
   { id: 'action', label: 'Action', icon: '🏋️' },
   { id: 'progress', label: 'Progress', icon: '📈' },
   { id: 'nutrition', label: 'Nutrition', icon: '🍽️' },
+  { id: 'longevity', label: 'Longevity', icon: '🧬' },
   { id: 'habits', label: 'Habits', icon: '✅' },
   { id: 'settings', label: 'Settings', icon: '⚙️' },
 ]
@@ -23,11 +27,22 @@ export default function App() {
   const profile = useAppStore((s) => s.profile)
   const activeWorkout = useAppStore((s) => s.activeWorkout)
   const [tab, setTab] = useState<Tab>('blueprint')
+  const [unlocked, setUnlocked] = useState(() => getSession() !== null)
+
+  if (!unlocked) {
+    return <AccountGate onReady={() => setUnlocked(true)} />
+  }
+
+  const lock = () => {
+    clearSession()
+    setUnlocked(false)
+    setTab('blueprint')
+  }
 
   if (!profile) {
     return (
       <>
-        <Header />
+        <Header onLock={lock} />
         <IntakeWizard />
         <Disclaimer />
       </>
@@ -38,7 +53,7 @@ export default function App() {
 
   return (
     <>
-      <Header />
+      <Header onLock={lock} />
       {activeWorkout && tab !== 'action' && (
         <div className="banner warn" role="status">
           🏋️ Workout in progress —{' '}
@@ -56,9 +71,10 @@ export default function App() {
       {tab === 'blueprint' && <Blueprint onNavigate={setTab} />}
       {tab === 'action' && <ActionView />}
       {tab === 'nutrition' && <NutritionView />}
+      {tab === 'longevity' && <LongevityView />}
       {tab === 'progress' && <ProgressView />}
       {tab === 'habits' && <HabitsView />}
-      {tab === 'settings' && <SettingsView />}
+      {tab === 'settings' && <SettingsView onLock={lock} />}
       <Disclaimer />
       {!workoutTakeover && (
         <nav className="tabbar" aria-label="Main navigation">
@@ -81,7 +97,8 @@ export default function App() {
   )
 }
 
-function Header() {
+function Header({ onLock }: { onLock?: () => void }) {
+  const session = getSession()
   return (
     <header className="app-header">
       <svg viewBox="0 0 512 512" width="34" height="34" aria-hidden>
@@ -98,6 +115,11 @@ function Header() {
         <div className="title">FitBlueprint</div>
         <div className="subtitle">Your evidence-based personal trainer</div>
       </div>
+      {onLock && session && (
+        <button className="lock-btn" onClick={onLock} title="Lock & switch profile">
+          <span aria-hidden>🔒</span> {session.displayName}
+        </button>
+      )}
     </header>
   )
 }

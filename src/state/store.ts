@@ -1,6 +1,8 @@
 import { create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
 import { SEED_MEMORY } from '../lib/threeDayFullBody'
+import { rawStorage } from './storage'
+import { getSession, sessionDecrypt, sessionEncrypt } from './session'
 import type {
   ActiveWorkout,
   ActivityCategory,
@@ -11,26 +13,51 @@ import type {
   WorkoutSession,
 } from '../lib/types'
 
-/** localStorage when available; in-memory fallback for sandboxed embeds (e.g. hosted preview). */
-function safeStorage(): Storage {
-  try {
-    const probe = '__fitblueprint_probe__'
-    window.localStorage.setItem(probe, '1')
-    window.localStorage.removeItem(probe)
-    return window.localStorage
-  } catch {
-    const mem = new Map<string, string>()
-    return {
-      get length() {
-        return mem.size
-      },
-      clear: () => mem.clear(),
-      getItem: (k: string) => mem.get(k) ?? null,
-      key: (i: number) => [...mem.keys()][i] ?? null,
-      removeItem: (k: string) => void mem.delete(k),
-      setItem: (k: string, v: string) => void mem.set(k, v),
-    }
-  }
+/**
+ * Per-user encrypted storage adapter. Values are encrypted with the unlocked
+ * account's key before being written; reads decrypt with the same key. Before
+ * an account is unlocked there is no session, so reads return null and writes
+ * are dropped — the store simply holds defaults.
+ */
+const encryptedStorage: StateStorage = {
+  getItem: async (name) => {
+    if (!getSession()) return null
+    const stored = rawStorage.getItem(name)
+    if (stored === null) return null
+    return sessionDecrypt(stored)
+  },
+  setItem: async (name, value) => {
+    if (!getSession()) return
+    rawStorage.setItem(name, await sessionEncrypt(value))
+  },
+  removeItem: async (name) => {
+    rawStorage.removeItem(name)
+  },
+}
+
+type AppData = Pick<
+  AppState,
+  | 'profile'
+  | 'planStartDate'
+  | 'weighIns'
+  | 'workoutLog'
+  | 'habitChecks'
+  | 'customProgram'
+  | 'activeWorkout'
+  | 'completedWorkouts'
+  | 'exerciseMemory'
+>
+
+const INITIAL_DATA: AppData = {
+  profile: null,
+  planStartDate: null,
+  weighIns: [],
+  workoutLog: [],
+  habitChecks: {},
+  customProgram: null,
+  activeWorkout: null,
+  completedWorkouts: [],
+  exerciseMemory: {},
 }
 
 export interface WorkoutLogEntry {
@@ -72,31 +99,12 @@ export function todayIso(): string {
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      profile: null,
-      planStartDate: null,
-      weighIns: [],
-      workoutLog: [],
-      habitChecks: {},
-      customProgram: null,
-      activeWorkout: null,
-      completedWorkouts: [],
-      exerciseMemory: {},
+      ...INITIAL_DATA,
 
       setProfile: (p) =>
         set((s) => ({ profile: p, planStartDate: s.planStartDate ?? todayIso() })),
 
-      resetAll: () =>
-        set({
-          profile: null,
-          planStartDate: null,
-          weighIns: [],
-          workoutLog: [],
-          habitChecks: {},
-          customProgram: null,
-          activeWorkout: null,
-          completedWorkouts: [],
-          exerciseMemory: {},
-        }),
+      resetAll: () => set({ ...INITIAL_DATA }),
 
       addWeighIn: (w) =>
         set((s) => ({
@@ -235,9 +243,39 @@ export const useAppStore = create<AppState>()(
             : [...s.workoutLog, { date, sessionName: name }],
         })),
     }),
-    { name: 'fitblueprint-v1', storage: createJSONStorage(safeStorage) },
+    {
+      name: 'fitblueprint-unbound', // real per-user name is set on unlock
+      storage: createJSONStorage(() => encryptedStorage),
+      skipHydration: true, // nothing to hydrate until an account is unlocked
+    },
   ),
 )
+
+/** Point the store at an unlocked account and load its (decrypted) data. */
+export async function bindAccountStorage(storageName: string): Promise<void> {
+  useAppStore.setState({ ...INITIAL_DATA }) // clear any previous account's state
+  useAppStore.persist.setOptions({ name: storageName })
+  await useAppStore.persist.rehydrate()
+}
+
+/** Import plaintext state from the pre-accounts version into the current account. */
+export function importLegacyState(state: Partial<Record<keyof AppData, unknown>>): void {
+  const clean: Record<string, unknown> = {}
+  for (const k of Object.keys(INITIAL_DATA) as (keyof AppData)[]) {
+    if (state[k] !== undefined) clean[k] = state[k]
+  }
+  useAppStore.setState(clean as Partial<AppState>)
+}
+
+/** Everything worth exporting for GDPR data portability (no functions). */
+export function exportableState(): Record<string, unknown> {
+  const s = useAppStore.getState()
+  const out: Record<string, unknown> = {}
+  for (const k of Object.keys(INITIAL_DATA) as (keyof AppData)[]) {
+    out[k] = s[k]
+  }
+  return out
+}
 
 /** First integer in a rep-target string, e.g. "8–12" → 8. Used as the reps prefill before any history exists. */
 function firstNumber(s: string): number | null {

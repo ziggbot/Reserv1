@@ -397,6 +397,55 @@ details.evidence summary { cursor: pointer; color: var(--text-dim); font-size: 0
   font-variant-numeric: tabular-nums;
 }
 
+/* Header lock button */
+.app-header { position: relative; }
+.lock-btn {
+  margin-left: auto;
+  align-self: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Auth gate */
+.auth-card { margin-top: 32px; }
+.account-list { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 14px; }
+.account-row { display: flex; align-items: center; gap: 12px; }
+.account-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.consent-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 14px 0;
+  font-size: 0.88rem;
+}
+.consent-row input[type='checkbox'] { width: 20px; height: 20px; accent-color: var(--accent); margin-top: 2px; flex-shrink: 0; }
+
+/* Longevity claims */
+.claim { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.claim:last-child { border-bottom: none; }
+.claim-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 2px; }
+.claim-source { font-size: 0.8rem; font-weight: 600; }
+
 /* Category segmented control */
 .segmented {
   display: grid;
