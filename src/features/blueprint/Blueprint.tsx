@@ -1,5 +1,6 @@
 import { useAppStore, todayIso, weeksSince } from '../../state/store'
 import { defaultProgram } from '../../lib/threeDayFullBody'
+import { recommendProgram } from '../../lib/programMatrix'
 import { buildNutritionPlan } from '../../lib/calculations'
 import { buildHabitPlan } from '../../lib/habits'
 import { buildOverview } from '../../lib/overview'
@@ -22,6 +23,7 @@ export default function Blueprint({ onNavigate }: { onNavigate: (t: Tab) => void
   if (!profile) return null
 
   const program = defaultProgram(profile, customProgram)
+  const rec = recommendProgram(profile)
   const nutrition = buildNutritionPlan(profile)
   const habits = buildHabitPlan(profile)
   const overview = buildOverview(profile, program)
@@ -124,6 +126,12 @@ export default function Blueprint({ onNavigate }: { onNavigate: (t: Tab) => void
           {program.splitName} · {schedule.summaryLine}. This is exactly what fits your{' '}
           {profile.daysPerWeek} training day{profile.daysPerWeek > 1 ? 's' : ''} — no more, no less.
         </p>
+        <p className="muted small why-schema">
+          <strong>Why this schema:</strong> {rec.rationale}{' '}
+          <a href={rec.sourceUrl} target="_blank" rel="noopener noreferrer">
+            {rec.sourceName} ↗
+          </a>
+        </p>
         <ol className="week-list">
           {schedule.days.map((day) => (
             <li className="week-day" key={day.label}>
@@ -145,7 +153,7 @@ export default function Blueprint({ onNavigate }: { onNavigate: (t: Tab) => void
         </p>
         {schedule.rotationNote && <p className="muted small">🔁 {schedule.rotationNote}</p>}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 6 }}>
-          <button className="primary" onClick={() => onNavigate('action')}>
+          <button className="primary" onClick={() => onNavigate('settings')}>
             ✏️ Adjust my plan
           </button>
           <button className="ghost" onClick={() => onNavigate('action')}>

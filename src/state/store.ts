@@ -4,6 +4,7 @@ import { SEED_MEMORY } from '../lib/threeDayFullBody'
 import { rawStorage } from './storage'
 import { getSession, sessionDecrypt, sessionEncrypt } from './session'
 import type { ChatMessage, PlanChange } from '../lib/coach/types'
+import { DEFAULT_COACH_SETTINGS, type CoachApiKeys, type CoachSettings } from '../lib/coach'
 import type {
   ActiveWorkout,
   ActivityCategory,
@@ -57,6 +58,8 @@ type AppData = Pick<
   | 'exerciseMemory'
   | 'coachMessages'
   | 'planHistory'
+  | 'coachSettings'
+  | 'coachApiKeys'
 >
 
 const INITIAL_DATA: AppData = {
@@ -71,6 +74,8 @@ const INITIAL_DATA: AppData = {
   exerciseMemory: {},
   coachMessages: [],
   planHistory: [],
+  coachSettings: DEFAULT_COACH_SETTINGS,
+  coachApiKeys: {},
 }
 
 export interface WorkoutLogEntry {
@@ -91,6 +96,8 @@ interface AppState {
   exerciseMemory: Record<string, { weightKg: number | null; reps: number | null }[]>
   coachMessages: ChatMessage[]
   planHistory: PlanRevision[]
+  coachSettings: CoachSettings
+  coachApiKeys: CoachApiKeys
 
   setProfile: (p: Profile) => void
   resetAll: () => void
@@ -109,6 +116,8 @@ interface AppState {
   commitPlanRevision: (source: PlanRevision['source'], description: string) => void
   applyPlanChanges: (changes: PlanChange[], source: PlanRevision['source'], description: string) => void
   restoreRevision: (id: string) => void
+  setCoachSettings: (patch: Partial<CoachSettings>) => void
+  setCoachApiKey: (provider: 'claude' | 'openai', key: string | undefined) => void
 }
 
 export function todayIso(): string {
@@ -342,6 +351,16 @@ export const useAppStore = create<AppState>()(
             }
           }
           return { profile, customProgram, planHistory: [revision, ...s.planHistory].slice(0, 50) }
+        }),
+
+      setCoachSettings: (patch) => set((s) => ({ coachSettings: { ...s.coachSettings, ...patch } })),
+
+      setCoachApiKey: (provider, key) =>
+        set((s) => {
+          const next = { ...s.coachApiKeys }
+          if (key && key.trim()) next[provider] = key.trim()
+          else delete next[provider]
+          return { coachApiKeys: next }
         }),
 
       restoreRevision: (id) =>

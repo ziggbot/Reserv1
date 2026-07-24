@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { defaultProgram, PROGRAM_SOURCE_URL, SEED_MEMORY, threeDayFullBody } from '../threeDayFullBody'
 import { buildProgram } from '../programs'
+import { recommendProgram } from '../programMatrix'
 import { useAppStore } from '../../state/store'
 import type { Profile } from '../types'
 
@@ -63,8 +64,9 @@ describe('threeDayFullBody program', () => {
     expect(all.find((e) => e.name === 'Skivstångsrodd')!.notes).toMatch(/Hantelrodd/)
   })
 
-  it('is the default program; customization overrides it', () => {
-    expect(defaultProgram(profile, null).splitName).toBe('3 Day Full Body')
+  it('default follows the research matrix; a custom program overrides it', () => {
+    // V8: the clean default is the matrix recommendation, not the imported log.
+    expect(defaultProgram(profile, null).splitName).toBe(recommendProgram(profile).program.splitName)
     const custom = buildProgram(profile)
     expect(defaultProgram(profile, custom)).toBe(custom)
   })

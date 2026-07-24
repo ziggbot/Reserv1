@@ -1,5 +1,6 @@
 import type { ExercisePrescription, Profile, WorkoutProgram, WorkoutSession } from './types'
 import { buildCardio, buildCautions } from './programs'
+import { recommendProgram } from './programMatrix'
 
 /**
  * The user's own "3 Day Full Body" program (based on svensktkosttillskott.se's
@@ -122,7 +123,7 @@ function seed(weightKg: number, reps: number): { weightKg: number | null; reps: 
   return Array.from({ length: 3 }, () => ({ weightKg, reps }))
 }
 
-/** The strength program in effect: user customization wins, else the 3 Day Full Body default. */
+/** The strength program in effect: user customization wins, else the research-matrix recommendation. */
 export function defaultProgram(profile: Profile, customProgram: WorkoutProgram | null): WorkoutProgram {
-  return customProgram ?? threeDayFullBody(profile)
+  return customProgram ?? recommendProgram(profile).program
 }

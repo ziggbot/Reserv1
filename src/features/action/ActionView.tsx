@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAppStore, todayIso } from '../../state/store'
-import {
-  buildPresetProgram,
-  buildProgram,
-  exerciseLibrary,
-  PROGRAM_PRESETS,
-} from '../../lib/programs'
+import { exerciseLibrary } from '../../lib/programs'
 import { proposalsFor } from '../../lib/activities'
 import { defaultProgram } from '../../lib/threeDayFullBody'
 import type {
@@ -16,8 +11,6 @@ import type {
   WorkoutSession,
 } from '../../lib/types'
 
-type Mode = 'list' | 'edit'
-
 const CATEGORIES: { id: ActivityCategory; icon: string; label: string }[] = [
   { id: 'strength', icon: '🏋️', label: 'Strength' },
   { id: 'cardio', icon: '🫀', label: 'Cardio' },
@@ -26,18 +19,8 @@ const CATEGORIES: { id: ActivityCategory; icon: string; label: string }[] = [
 ]
 
 export default function ActionView() {
-  const {
-    profile,
-    customProgram,
-    setCustomProgram,
-    activeWorkout,
-    completedWorkouts,
-    startWorkout,
-    applyPlanChanges,
-  } = useAppStore()
-  const [mode, setMode] = useState<Mode>('list')
+  const { profile, customProgram, activeWorkout, completedWorkouts, startWorkout } = useAppStore()
   const [category, setCategory] = useState<ActivityCategory>('strength')
-  const [presetId, setPresetId] = useState('recommended')
   const [summary, setSummary] = useState<CompletedWorkout | null>(null)
 
   if (!profile) return null
@@ -49,18 +32,6 @@ export default function ActionView() {
 
   if (activeWorkout) return <ActiveWorkoutScreen onFinished={setSummary} />
   if (summary) return <WorkoutSummary workout={summary} history={completedWorkouts} onClose={() => setSummary(null)} />
-  if (mode === 'edit')
-    return (
-      <ProgramEditor
-        program={program}
-        onSave={(p) => {
-          useAppStore.getState().commitPlanRevision('user', 'Edited program')
-          setCustomProgram(p)
-          setMode('list')
-        }}
-        onCancel={() => setMode('list')}
-      />
-    )
 
   const categoryPicker = (
     <div className="segmented" role="tablist" aria-label="Training category">
@@ -95,141 +66,12 @@ export default function ActionView() {
       <div className="card">
         <h1>Action</h1>
         {categoryPicker}
-        <h2 style={{ marginTop: 8 }}>📅 Weekly setup</h2>
+        <h2 style={{ marginTop: 8 }}>Today’s workout — {program.splitName}</h2>
         <p className="muted small">
-          How many days you can realistically train, and how long each session is. Changing these
-          re-plans your week and is saved to your plan history.
+          Just start the next session. Each set prefills what you lifted last time, so logging is two
+          taps. Want a different program, more days, or to edit exercises? It’s all in{' '}
+          <strong>Settings → Training program</strong>.
         </p>
-        <div className="setup-row">
-          <span>Training days / week</span>
-          <div className="stepper activity-stepper">
-            <button
-              type="button"
-              aria-label="Fewer training days"
-              onClick={() =>
-                profile.daysPerWeek > 1 &&
-                applyPlanChanges(
-                  [{ type: 'daysPerWeek', value: profile.daysPerWeek - 1 }],
-                  'user',
-                  `Training days → ${profile.daysPerWeek - 1}/week`,
-                )
-              }
-            >
-              −
-            </button>
-            <input type="number" value={profile.daysPerWeek} readOnly aria-label="Training days per week" />
-            <button
-              type="button"
-              aria-label="More training days"
-              onClick={() =>
-                profile.daysPerWeek < 6 &&
-                applyPlanChanges(
-                  [{ type: 'daysPerWeek', value: profile.daysPerWeek + 1 }],
-                  'user',
-                  `Training days → ${profile.daysPerWeek + 1}/week`,
-                )
-              }
-            >
-              +
-            </button>
-          </div>
-        </div>
-        <div className="setup-row">
-          <span>Minutes / session</span>
-          <div className="stepper activity-stepper">
-            <button
-              type="button"
-              aria-label="Shorter sessions"
-              onClick={() =>
-                profile.minutesPerSession > 15 &&
-                applyPlanChanges(
-                  [{ type: 'minutesPerSession', value: profile.minutesPerSession - 15 }],
-                  'user',
-                  `Session length → ${profile.minutesPerSession - 15} min`,
-                )
-              }
-            >
-              −
-            </button>
-            <input type="number" value={profile.minutesPerSession} readOnly aria-label="Minutes per session" />
-            <button
-              type="button"
-              aria-label="Longer sessions"
-              onClick={() =>
-                profile.minutesPerSession < 120 &&
-                applyPlanChanges(
-                  [{ type: 'minutesPerSession', value: profile.minutesPerSession + 15 }],
-                  'user',
-                  `Session length → ${profile.minutesPerSession + 15} min`,
-                )
-              }
-            >
-              +
-            </button>
-          </div>
-        </div>
-        <p className="muted">
-          Pick a preset, customize any session, and hit <strong>Start workout</strong> at the gym — each
-          set prefills what you lifted last time, so logging is two taps, not ten.
-        </p>
-        <div className="choice-grid">
-          <button
-            type="button"
-            className={`choice ${!customProgram ? 'selected' : ''}`}
-            onClick={() => {
-              setPresetId('threeday')
-              setCustomProgram(null)
-            }}
-          >
-            3 Day Full Body
-            <span className="desc">Your own program — latest weights prefilled</span>
-          </button>
-          {PROGRAM_PRESETS.filter((p) => p.id !== 'recommended').map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              className={`choice ${presetId === p.id && customProgram ? 'selected' : ''}`}
-              onClick={() => {
-                setPresetId(p.id)
-                setCustomProgram(buildPresetProgram(profile, p.id))
-              }}
-            >
-              {p.name}
-              <span className="desc">{p.description}</span>
-            </button>
-          ))}
-          <button
-            type="button"
-            className={`choice ${presetId === 'generated' && customProgram ? 'selected' : ''}`}
-            onClick={() => {
-              setPresetId('generated')
-              setCustomProgram(buildProgram(profile))
-            }}
-          >
-            Generated for you
-            <span className="desc">Built from your interview answers</span>
-          </button>
-        </div>
-        {customProgram && (
-          <p className="small muted" style={{ marginTop: 8 }}>
-            Using a {presetId === 'generated' ? 'generated' : 'preset/customized'} program.{' '}
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault()
-                setCustomProgram(null)
-                setPresetId('threeday')
-              }}
-            >
-              Back to 3 Day Full Body
-            </a>
-          </p>
-        )}
-        <div style={{ marginTop: 10 }}>
-          <button className="ghost" onClick={() => setMode('edit')}>
-            ✏️ Customize program
-          </button>
-        </div>
       </div>
 
       {program.sessions.map((s) => {
@@ -397,7 +239,7 @@ function ActivityCard({ proposal }: { proposal: ActivityProposal }) {
 
 /* ---------------- Program editor ---------------- */
 
-function ProgramEditor({
+export function ProgramEditor({
   program,
   onSave,
   onCancel,

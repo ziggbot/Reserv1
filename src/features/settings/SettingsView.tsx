@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { exportableState, useAppStore } from '../../state/store'
 import { getSession } from '../../state/session'
 import { eraseAccount } from '../../state/accounts'
-import PlanHistory from '../coach/PlanHistory'
+import TrainingProgramCard from './TrainingProgramCard'
+import CoachSettingsCard from './CoachSettingsCard'
 
 export default function SettingsView({ onLock }: { onLock: () => void }) {
   const { profile, setProfile, resetAll, weighIns } = useAppStore()
@@ -72,6 +73,8 @@ export default function SettingsView({ onLock }: { onLock: () => void }) {
         </button>
       </div>
 
+      <TrainingProgramCard />
+
       <div className="card">
         <h2>🔐 Your data & privacy</h2>
         <p className="muted small">
@@ -134,15 +137,7 @@ export default function SettingsView({ onLock }: { onLock: () => void }) {
         )}
       </div>
 
-      <div className="card">
-        <h2>🤖 AI training partner</h2>
-        <p className="muted small">
-          Tap the 💬 button anywhere in the app to chat with your coach about your training — it can
-          propose concrete plan changes you review and apply. A full AI (LLM) dialogue is coming soon;
-          the built-in coach already handles common adjustments offline.
-        </p>
-        <PlanHistory />
-      </div>
+      <CoachSettingsCard />
 
       <div className="card">
         <h2>👤 Profile & session</h2>

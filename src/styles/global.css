@@ -563,3 +563,8 @@ details.evidence summary { cursor: pointer; color: var(--text-dim); font-size: 0
 .chart-dot { fill: var(--text-dim); opacity: 0.55; }
 .chart-avg { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; }
 .chart-goal { stroke: var(--accent); stroke-dasharray: 6 5; stroke-width: 1.5; opacity: 0.8; }
+
+/* V8: coach provider config + why-this-schema note */
+.coach-provider-config { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-soft); }
+.why-schema { border-left: 3px solid var(--accent); padding-left: 10px; margin-top: 8px; }
+.why-schema a { color: var(--accent); }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '../../state/store'
 import { defaultProgram } from '../../lib/threeDayFullBody'
 import { buildWeeklySchedule } from '../../lib/weeklySchedule'
-import { localCoach } from '../../lib/coach/localCoach'
+import { resolveCoach } from '../../lib/coach'
 import { describeChange, type ChatMessage, type PlanProposal } from '../../lib/coach/types'
 import PlanHistory from './PlanHistory'
 
@@ -13,8 +13,17 @@ function newId(): string {
 }
 
 export default function CoachSheet({ onClose }: { onClose: () => void }) {
-  const { profile, customProgram, coachMessages, addCoachMessage, markProposal, applyPlanChanges } =
-    useAppStore()
+  const {
+    profile,
+    customProgram,
+    coachMessages,
+    coachSettings,
+    coachApiKeys,
+    addCoachMessage,
+    markProposal,
+    applyPlanChanges,
+  } = useAppStore()
+  const coach = resolveCoach(coachSettings, coachApiKeys)
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
@@ -39,7 +48,12 @@ export default function CoachSheet({ onClose }: { onClose: () => void }) {
       program,
       scheduleSummary: buildWeeklySchedule(profile!, program).summaryLine,
     }
-    const reply = await localCoach.reply([...coachMessages, userMsg], context)
+    let reply
+    try {
+      reply = await coach.reply([...coachMessages, userMsg], context)
+    } catch {
+      reply = { text: 'Something went wrong reaching the coach. Please try again.' }
+    }
     addCoachMessage({
       id: newId(),
       role: 'coach',
@@ -61,7 +75,7 @@ export default function CoachSheet({ onClose }: { onClose: () => void }) {
         <div className="coach-header">
           <div>
             <strong>🤝 Training partner</strong>
-            <div className="muted small">Built-in coach · full AI dialogue coming soon</div>
+            <div className="muted small">{coach.label}</div>
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
             <button className="ghost icon-btn" onClick={() => setShowHistory((v) => !v)} title="Plan history">
