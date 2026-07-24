@@ -3,8 +3,11 @@ import { buildOverview } from '../overview'
 import { recommendSupplements } from '../supplements'
 import { buildCardio, buildPresetProgram, exerciseLibrary, hiitSafe } from '../programs'
 import { cardioProposals, enduranceProposals, stretchProposals } from '../activities'
+import { threeDayFullBody } from '../threeDayFullBody'
 import { useAppStore } from '../../state/store'
 import type { Profile, WorkoutSession } from '../types'
+
+const overviewOf = (p: Profile) => buildOverview(p, threeDayFullBody(p))
 
 const base: Profile = {
   name: 'Test',
@@ -38,7 +41,7 @@ const base: Profile = {
 
 describe('buildOverview', () => {
   it('quantifies the fat-loss goal with kg and timeline', () => {
-    const text = buildOverview(base).map((d) => `${d.headline} ${d.detail}`).join(' ')
+    const text = overviewOf(base).map((d) => `${d.headline} ${d.detail}`).join(' ')
     expect(text).toMatch(/Lose 10 kg \(92 → 82 kg\)/)
     expect(text).toMatch(/weeks/)
     expect(text).toMatch(/steps/)
@@ -47,7 +50,7 @@ describe('buildOverview', () => {
     expect(text).toMatch(/Sleep 7–9/)
   })
   it('protein directive spans a range around the goal-specific g/kg', () => {
-    const eat = buildOverview(base).find((d) => d.icon === '🍽️')!
+    const eat = overviewOf(base).find((d) => d.icon === '🍽️')!
     // 2.2 g/kg base → range 2.0–2.5 g/kg = 184–230 g at 92 kg
     expect(eat.headline).toMatch(/184–230 g protein/)
   })
@@ -57,7 +60,7 @@ describe('buildOverview', () => {
     const cardio = buildCardio(withHtn)
     expect(cardio.hiitSessionsPerWeek).toBe(0)
     expect(cardio.hiitDescription).toMatch(/health screen/i)
-    const overviewText = buildOverview(withHtn).map((d) => d.headline).join(' ')
+    const overviewText = overviewOf(withHtn).map((d) => d.headline).join(' ')
     expect(overviewText).not.toMatch(/HIIT/)
   })
 })

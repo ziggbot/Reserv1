@@ -9,6 +9,7 @@ import ProgressView from './features/progress/ProgressView'
 import HabitsView from './features/habits/HabitsView'
 import SettingsView from './features/settings/SettingsView'
 import AccountGate from './features/auth/AccountGate'
+import CoachFab from './features/coach/CoachFab'
 import { clearSession, getSession } from './state/session'
 
 export type Tab = 'blueprint' | 'action' | 'progress' | 'nutrition' | 'longevity' | 'habits' | 'settings'
@@ -76,6 +77,7 @@ export default function App() {
       {tab === 'habits' && <HabitsView />}
       {tab === 'settings' && <SettingsView onLock={lock} />}
       <Disclaimer />
+      {!workoutTakeover && <CoachFab />}
       {!workoutTakeover && (
         <nav className="tabbar" aria-label="Main navigation">
           {TABS.map((t) => (

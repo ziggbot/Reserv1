@@ -3,6 +3,7 @@ import { createJSONStorage, persist, type StateStorage } from 'zustand/middlewar
 import { SEED_MEMORY } from '../lib/threeDayFullBody'
 import { rawStorage } from './storage'
 import { getSession, sessionDecrypt, sessionEncrypt } from './session'
+import type { ChatMessage, PlanChange } from '../lib/coach/types'
 import type {
   ActiveWorkout,
   ActivityCategory,
@@ -12,6 +13,14 @@ import type {
   WorkoutProgram,
   WorkoutSession,
 } from '../lib/types'
+
+export interface PlanRevision {
+  id: string
+  ts: string
+  source: 'user' | 'coach' | 'intake'
+  description: string
+  snapshot: { profile: Profile | null; customProgram: WorkoutProgram | null }
+}
 
 /**
  * Per-user encrypted storage adapter. Values are encrypted with the unlocked
@@ -46,6 +55,8 @@ type AppData = Pick<
   | 'activeWorkout'
   | 'completedWorkouts'
   | 'exerciseMemory'
+  | 'coachMessages'
+  | 'planHistory'
 >
 
 const INITIAL_DATA: AppData = {
@@ -58,6 +69,8 @@ const INITIAL_DATA: AppData = {
   activeWorkout: null,
   completedWorkouts: [],
   exerciseMemory: {},
+  coachMessages: [],
+  planHistory: [],
 }
 
 export interface WorkoutLogEntry {
@@ -76,6 +89,8 @@ interface AppState {
   completedWorkouts: CompletedWorkout[]
   /** Last logged sets per exercise name — the prefill source for every future workout. */
   exerciseMemory: Record<string, { weightKg: number | null; reps: number | null }[]>
+  coachMessages: ChatMessage[]
+  planHistory: PlanRevision[]
 
   setProfile: (p: Profile) => void
   resetAll: () => void
@@ -89,6 +104,11 @@ interface AppState {
   cancelWorkout: () => void
   finishWorkout: (nowIso: string) => CompletedWorkout | null
   logActivity: (category: ActivityCategory, name: string, durationMin: number, date: string) => void
+  addCoachMessage: (m: ChatMessage) => void
+  markProposal: (messageId: string, outcome: 'applied' | 'dismissed') => void
+  commitPlanRevision: (source: PlanRevision['source'], description: string) => void
+  applyPlanChanges: (changes: PlanChange[], source: PlanRevision['source'], description: string) => void
+  restoreRevision: (id: string) => void
 }
 
 export function todayIso(): string {
@@ -242,6 +262,105 @@ export const useAppStore = create<AppState>()(
             ? s.workoutLog
             : [...s.workoutLog, { date, sessionName: name }],
         })),
+
+      addCoachMessage: (m) => set((s) => ({ coachMessages: [...s.coachMessages, m] })),
+
+      markProposal: (messageId, outcome) =>
+        set((s) => ({
+          coachMessages: s.coachMessages.map((m) =>
+            m.id === messageId
+              ? {
+                  ...m,
+                  proposalApplied: outcome === 'applied' ? true : m.proposalApplied,
+                  proposalDismissed: outcome === 'dismissed' ? true : m.proposalDismissed,
+                }
+              : m,
+          ),
+        })),
+
+      commitPlanRevision: (source, description) =>
+        set((s) => ({
+          planHistory: [
+            {
+              id: revisionId(),
+              ts: new Date().toISOString(),
+              source,
+              description,
+              snapshot: { profile: s.profile, customProgram: s.customProgram },
+            },
+            ...s.planHistory,
+          ].slice(0, 50),
+        })),
+
+      applyPlanChanges: (changes, source, description) =>
+        set((s) => {
+          // Snapshot BEFORE applying, so restoring returns to the pre-change plan.
+          const revision: PlanRevision = {
+            id: revisionId(),
+            ts: new Date().toISOString(),
+            source,
+            description,
+            snapshot: { profile: s.profile, customProgram: s.customProgram },
+          }
+          let profile = s.profile
+          let customProgram = s.customProgram
+          for (const c of changes) {
+            if (!profile && c.type !== 'note') continue
+            switch (c.type) {
+              case 'daysPerWeek':
+                profile = { ...profile!, daysPerWeek: c.value }
+                break
+              case 'minutesPerSession':
+                profile = { ...profile!, minutesPerSession: c.value }
+                break
+              case 'goal':
+                profile = { ...profile!, goal: c.value }
+                break
+              case 'goalWeightKg':
+                profile = { ...profile!, goalWeightKg: c.value }
+                break
+              case 'addExercise': {
+                if (!customProgram) break
+                customProgram = {
+                  ...customProgram,
+                  sessions: customProgram.sessions.map((sess, i) =>
+                    i === c.sessionIndex
+                      ? {
+                          ...sess,
+                          exercises: [
+                            ...sess.exercises,
+                            { name: c.name, sets: 3, reps: '8–12', rpe: 'RPE 7–8 (1–3 reps in reserve)' },
+                          ],
+                        }
+                      : sess,
+                  ),
+                }
+                break
+              }
+              case 'note':
+                break // notes are journal-only
+            }
+          }
+          return { profile, customProgram, planHistory: [revision, ...s.planHistory].slice(0, 50) }
+        }),
+
+      restoreRevision: (id) =>
+        set((s) => {
+          const rev = s.planHistory.find((r) => r.id === id)
+          if (!rev) return s
+          const current: PlanRevision = {
+            id: revisionId(),
+            ts: new Date().toISOString(),
+            source: 'user',
+            description: 'Before restore',
+            snapshot: { profile: s.profile, customProgram: s.customProgram },
+          }
+          return {
+            profile: rev.snapshot.profile,
+            customProgram: rev.snapshot.customProgram,
+            planHistory: [current, ...s.planHistory].slice(0, 50),
+          }
+        }),
     }),
     {
       name: 'fitblueprint-unbound', // real per-user name is set on unlock
@@ -275,6 +394,12 @@ export function exportableState(): Record<string, unknown> {
     out[k] = s[k]
   }
   return out
+}
+
+function revisionId(): string {
+  const b = new Uint8Array(6)
+  crypto.getRandomValues(b)
+  return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('')
 }
 
 /** First integer in a rep-target string, e.g. "8–12" → 8. Used as the reps prefill before any history exists. */

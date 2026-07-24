@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { exportableState, useAppStore } from '../../state/store'
 import { getSession } from '../../state/session'
 import { eraseAccount } from '../../state/accounts'
+import PlanHistory from '../coach/PlanHistory'
 
 export default function SettingsView({ onLock }: { onLock: () => void }) {
   const { profile, setProfile, resetAll, weighIns } = useAppStore()
@@ -58,13 +59,14 @@ export default function SettingsView({ onLock }: { onLock: () => void }) {
         <button
           className="primary"
           disabled={!weight || Number(weight) < 35 || Number(weight) > 300}
-          onClick={() =>
+          onClick={() => {
+            useAppStore.getState().commitPlanRevision('user', 'Updated stats')
             setProfile({
               ...profile,
               weightKg: Number(weight),
               goalWeightKg: goalWeight === '' ? undefined : Number(goalWeight),
             })
-          }
+          }}
         >
           Save & recalculate
         </button>
@@ -130,6 +132,16 @@ export default function SettingsView({ onLock }: { onLock: () => void }) {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="card">
+        <h2>🤖 AI training partner</h2>
+        <p className="muted small">
+          Tap the 💬 button anywhere in the app to chat with your coach about your training — it can
+          propose concrete plan changes you review and apply. A full AI (LLM) dialogue is coming soon;
+          the built-in coach already handles common adjustments offline.
+        </p>
+        <PlanHistory />
       </div>
 
       <div className="card">

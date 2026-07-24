@@ -4,6 +4,7 @@ import { buildNutritionPlan } from '../../lib/calculations'
 import { buildHabitPlan } from '../../lib/habits'
 import { buildOverview } from '../../lib/overview'
 import { buildRoadmap } from '../../lib/roadmap'
+import { buildWeeklySchedule } from '../../lib/weeklySchedule'
 import EvidencePanel from '../shared/EvidencePanel'
 import type { Tab } from '../../App'
 
@@ -23,7 +24,8 @@ export default function Blueprint({ onNavigate }: { onNavigate: (t: Tab) => void
   const program = defaultProgram(profile, customProgram)
   const nutrition = buildNutritionPlan(profile)
   const habits = buildHabitPlan(profile)
-  const overview = buildOverview(profile)
+  const overview = buildOverview(profile, program)
+  const schedule = buildWeeklySchedule(profile, program)
   const roadmap = buildRoadmap(profile)
   const currentWeek = weeksSince(planStartDate, todayIso()) + 1
 
@@ -117,22 +119,39 @@ export default function Blueprint({ onNavigate }: { onNavigate: (t: Tab) => void
       </div>
 
       <div className="card">
-        <h2>🏋️ Training — {program.splitName}</h2>
-        <p>
-          {program.sessions.length} strength sessions:{' '}
-          {program.sessions.map((s) => s.name).join(' · ')} — plus{' '}
-          {program.cardio.sessionsPerWeek}× zone-2 cardio
-          {program.cardio.hiitSessionsPerWeek > 0 ? ` and ${program.cardio.hiitSessionsPerWeek}× HIIT` : ''}.
+        <h2>📅 Your training week</h2>
+        <p className="muted small">
+          {program.splitName} · {schedule.summaryLine}. This is exactly what fits your{' '}
+          {profile.daysPerWeek} training day{profile.daysPerWeek > 1 ? 's' : ''} — no more, no less.
         </p>
-        <ul>
-          {program.progressionRules.slice(0, 2).map((r) => (
-            <li key={r}>{r}</li>
+        <ol className="week-list">
+          {schedule.days.map((day) => (
+            <li className="week-day" key={day.label}>
+              <span className="week-icon" aria-hidden>
+                {day.icon}
+              </span>
+              <div>
+                <strong>{day.label}: {day.title}</strong>
+                <div className="muted small">{day.detail}</div>
+              </div>
+            </li>
           ))}
-          <li>{program.deloadRule}</li>
-        </ul>
-        <button className="primary" onClick={() => onNavigate('action')}>
-          Open programs & start a workout →
-        </button>
+        </ol>
+        <div className="banner info small">
+          <strong>Conditioning:</strong> {schedule.conditioning.note}
+        </div>
+        <p className="muted small">
+          👟 {schedule.dailySteps.toLocaleString()} steps every day (all days, not counted as a session).
+        </p>
+        {schedule.rotationNote && <p className="muted small">🔁 {schedule.rotationNote}</p>}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 6 }}>
+          <button className="primary" onClick={() => onNavigate('action')}>
+            ✏️ Adjust my plan
+          </button>
+          <button className="ghost" onClick={() => onNavigate('action')}>
+            Start a workout →
+          </button>
+        </div>
       </div>
 
       <div className="card">

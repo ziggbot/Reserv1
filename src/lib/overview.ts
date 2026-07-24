@@ -8,16 +8,18 @@ import {
   tdee,
   weeksToGoal,
 } from './calculations'
-import { buildCardio } from './programs'
-import type { Directive, Profile } from './types'
+import { buildWeeklySchedule } from './weeklySchedule'
+import type { Directive, Profile, WorkoutProgram } from './types'
 
 /**
  * "What matters for your goal" — the whole plan compressed into concrete,
  * numeric marching orders. Everything else in the app is detail behind these.
+ * Training/conditioning directives are derived from the reconciled weekly
+ * schedule, so they always respect the user's training-day budget.
  */
-export function buildOverview(profile: Profile): Directive[] {
+export function buildOverview(profile: Profile, program: WorkoutProgram): Directive[] {
   const d: Directive[] = []
-  const cardio = buildCardio(profile)
+  const schedule = buildWeeklySchedule(profile, program)
   const eta = weeksToGoal(profile)
   const maintenance = tdee(profile)
   const calories = calorieTarget(profile)
@@ -59,27 +61,37 @@ export function buildOverview(profile: Profile): Directive[] {
     })
   }
 
-  // 2. Train
+  // 2. Train — the exact reconciled week (never over-prescribes vs. the day budget)
+  const strengthDays = schedule.days.filter((x) => x.kind === 'strength').length
   d.push({
     icon: '🏋️',
-    headline: `Lift ${profile.daysPerWeek}×/week, ${profile.minutesPerSession} min`,
-    detail: 'Progressive overload on the big movement patterns is the engine; everything else supports it. Programs live in the Action tab.',
+    headline: `Train ${profile.daysPerWeek}×/week, ${profile.minutesPerSession} min`,
+    detail: `Your week: ${schedule.summaryLine}. Progressive overload on the big lifts is the engine — see “Your training week” below and the Action tab.`,
   })
 
-  // 3. Cardio / HIIT
-  d.push({
-    icon: '🫀',
-    headline:
-      cardio.hiitSessionsPerWeek > 0
-        ? `${cardio.sessionsPerWeek}× zone 2 + ${cardio.hiitSessionsPerWeek}× HIIT per week`
-        : `${cardio.sessionsPerWeek}× zone-2 cardio per week`,
-    detail: cardio.hiitSessionsPerWeek > 0 ? cardio.hiitDescription : cardio.description,
-  })
+  // 3. Conditioning — placed inside the budget, or folded into finishers + steps
+  if (schedule.conditioning.placement === 'separate') {
+    const c = schedule.conditioning
+    d.push({
+      icon: '🫀',
+      headline:
+        c.hiitPerWeek > 0
+          ? `${c.zone2PerWeek}× zone 2 + ${c.hiitPerWeek}× HIIT per week`
+          : `${c.zone2PerWeek}× zone-2 cardio per week`,
+      detail: c.note,
+    })
+  } else {
+    d.push({
+      icon: '🫀',
+      headline: `Conditioning as a finisher (${strengthDays} training day${strengthDays > 1 ? 's' : ''})`,
+      detail: schedule.conditioning.note,
+    })
+  }
 
   // 4. Steps
   d.push({
     icon: '👟',
-    headline: `${cardio.stepsTarget.toLocaleString()} steps every day`,
+    headline: `${schedule.dailySteps.toLocaleString()} steps every day`,
     detail: 'Daily movement is the biggest controllable side of energy balance — and the first lever when progress stalls.',
   })
 
