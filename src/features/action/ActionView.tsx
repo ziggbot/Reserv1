@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useAppStore, todayIso } from '../../state/store'
 import { exerciseLibrary } from '../../lib/programs'
 import { proposalsFor } from '../../lib/activities'
-import { defaultProgram } from '../../lib/threeDayFullBody'
 import type {
   ActivityCategory,
   ActivityProposal,
@@ -11,151 +10,11 @@ import type {
   WorkoutSession,
 } from '../../lib/types'
 
-const CATEGORIES: { id: ActivityCategory; icon: string; label: string }[] = [
-  { id: 'strength', icon: '🏋️', label: 'Strength' },
-  { id: 'cardio', icon: '🫀', label: 'Cardio' },
-  { id: 'endurance', icon: '🏃', label: 'Endurance' },
-  { id: 'stretch', icon: '🧘', label: 'Stretch' },
-]
-
-export default function ActionView() {
-  const { profile, customProgram, activeWorkout, completedWorkouts, startWorkout } = useAppStore()
-  const [category, setCategory] = useState<ActivityCategory>('strength')
-  const [summary, setSummary] = useState<CompletedWorkout | null>(null)
-
-  if (!profile) return null
-
-  const program: WorkoutProgram = defaultProgram(profile, customProgram)
-
-  const lastCompletedFor = (sessionName: string): CompletedWorkout | undefined =>
-    [...completedWorkouts].reverse().find((w) => w.sessionName === sessionName)
-
-  if (activeWorkout) return <ActiveWorkoutScreen onFinished={setSummary} />
-  if (summary) return <WorkoutSummary workout={summary} history={completedWorkouts} onClose={() => setSummary(null)} />
-
-  const categoryPicker = (
-    <div className="segmented" role="tablist" aria-label="Training category">
-      {CATEGORIES.map((c) => (
-        <button
-          key={c.id}
-          role="tab"
-          aria-selected={category === c.id}
-          className={category === c.id ? 'active' : ''}
-          onClick={() => setCategory(c.id)}
-        >
-          <span aria-hidden>{c.icon}</span> {c.label}
-        </button>
-      ))}
-    </div>
-  )
-
-  if (category !== 'strength') {
-    return (
-      <main>
-        <div className="card">
-          <h1>Action</h1>
-          {categoryPicker}
-        </div>
-        <ActivitySection category={category} />
-      </main>
-    )
-  }
-
-  return (
-    <main>
-      <div className="card">
-        <h1>Action</h1>
-        {categoryPicker}
-        <h2 style={{ marginTop: 8 }}>Today’s workout — {program.splitName}</h2>
-        <p className="muted small">
-          Just start the next session. Each set prefills what you lifted last time, so logging is two
-          taps. Want a different program, more days, or to edit exercises? It’s all in{' '}
-          <strong>Settings → Training program</strong>.
-        </p>
-      </div>
-
-      {program.sessions.map((s) => {
-        const last = lastCompletedFor(s.name)
-        return (
-          <div className="card" key={s.name}>
-            <h2>
-              {s.name} <span className="pill info">{s.focus}</span>
-            </h2>
-            {last && (
-              <p className="small muted">
-                Last time: {last.date} — {last.totalSets} sets, {last.totalVolumeKg.toLocaleString()} kg
-                total volume
-              </p>
-            )}
-            <div className="table-scroll">
-              <table className="exercise-table">
-                <thead>
-                  <tr>
-                    <th>Exercise</th>
-                    <th>Sets</th>
-                    <th>Reps</th>
-                    <th>Effort</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {s.exercises.map((e, i) => (
-                    <tr key={i}>
-                      <td>
-                        {e.linkUrl ? (
-                          <a href={e.linkUrl} target="_blank" rel="noopener noreferrer">
-                            {e.name} ↗
-                          </a>
-                        ) : (
-                          e.name
-                        )}
-                        {e.notes && <div className="muted small">{e.notes}</div>}
-                      </td>
-                      <td>{e.sets}</td>
-                      <td>{e.reps}</td>
-                      <td>{e.rpe}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="small muted">Warm-up: {s.warmup[0]} · Mobility finisher: {s.mobilityFinisher.join(' · ')}</p>
-            <button className="primary" onClick={() => startWorkout(s)}>
-              ▶ Start workout
-            </button>
-          </div>
-        )
-      })}
-
-      <div className="card">
-        <h2>Cardio this week</h2>
-        <p>{program.cardio.description}</p>
-        <p>{program.cardio.hiitDescription}</p>
-        <p className="small muted">
-          Steps floor: {program.cardio.stepsTarget.toLocaleString()}/day · {program.deloadRule}
-        </p>
-      </div>
-
-      {completedWorkouts.length > 0 && (
-        <div className="card">
-          <h2>Recent workouts</h2>
-          {[...completedWorkouts]
-            .slice(-6)
-            .reverse()
-            .map((w, i) => (
-              <div className="check-row" key={`${w.date}-${w.sessionName}-${i}`}>
-                <span>
-                  <strong>{w.sessionName}</strong>{' '}
-                  <span className="muted small">
-                    {w.date} · {w.durationMin} min · {w.totalSets} sets · {w.totalVolumeKg.toLocaleString()} kg
-                  </span>
-                </span>
-              </div>
-            ))}
-        </div>
-      )}
-    </main>
-  )
-}
+/**
+ * Training building blocks. The home screen (features/train/TrainHome) composes
+ * these; this file keeps the workout logger, the summary, the program editor
+ * and the cardio/endurance/stretch proposals.
+ */
 
 /* ---------------- Cardio / endurance / stretch proposals ---------------- */
 
@@ -168,7 +27,7 @@ const SECTION_INTRO: Record<Exclude<ActivityCategory, 'strength'>, string> = {
     'Short mobility routines. The best one is the one you actually do — pick by how your body feels today.',
 }
 
-function ActivitySection({ category }: { category: Exclude<ActivityCategory, 'strength'> }) {
+export function ActivitySection({ category }: { category: Exclude<ActivityCategory, 'strength'> }) {
   const profile = useAppStore((s) => s.profile)!
   const proposals = proposalsFor(profile, category)
   return (
@@ -359,7 +218,7 @@ export function ProgramEditor({
 
 /* ---------------- Active workout logger ---------------- */
 
-function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedWorkout) => void }) {
+export function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedWorkout) => void }) {
   const { activeWorkout, updateActiveSet, addActiveSet, cancelWorkout, finishWorkout } = useAppStore()
   const [now, setNow] = useState(Date.now())
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null)
@@ -379,11 +238,10 @@ function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedWorkout)
 
   return (
     <main className="workout-screen">
-      <div className="card">
+      <div className="card plain">
         <h1>{activeWorkout.sessionName}</h1>
         <p className="muted small">
-          Fill weight × reps, tap ✓ when the set is done — values are prefilled from last time. Beat one
-          number (a rep or 2.5 kg) somewhere today.
+          Weight × reps are prefilled from last time. Tap ✓ when a set is done. Beat one number today.
         </p>
       </div>
 
@@ -397,7 +255,7 @@ function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedWorkout)
       )}
 
       {activeWorkout.exercises.map((ex, exIdx) => (
-        <div className="card" key={exIdx}>
+        <div className="exercise-block" key={exIdx}>
           <h3>
             {ex.linkUrl ? (
               <a href={ex.linkUrl} target="_blank" rel="noopener noreferrer">
@@ -453,8 +311,8 @@ function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedWorkout)
       ))}
 
       <div className="workout-footer">
-        <span>
-          ⏱ {elapsedMin}:{String(elapsedSec).padStart(2, '0')} · {doneSets} sets done
+        <span className="elapsed">
+          ⏱ {elapsedMin}:{String(elapsedSec).padStart(2, '0')} · {doneSets} sets
         </span>
         {!confirmCancel ? (
           <button className="ghost" onClick={() => setConfirmCancel(true)}>
@@ -528,7 +386,7 @@ function Stepper({
 
 /* ---------------- Post-workout summary ---------------- */
 
-function WorkoutSummary({
+export function WorkoutSummary({
   workout,
   history,
   onClose,
@@ -584,7 +442,7 @@ function WorkoutSummary({
           })}
         </ul>
         <p className="muted small">
-          Progress lives in the Progress tab — volume, strength trend and your weight curve.
+          Volume, strength trend and your weight curve live under Progress.
         </p>
         <button className="primary" onClick={onClose}>
           Done

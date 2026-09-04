@@ -156,8 +156,8 @@ export default function Blueprint({ onNavigate }: { onNavigate: (t: Tab) => void
           <button className="primary" onClick={() => onNavigate('settings')}>
             ✏️ Adjust my plan
           </button>
-          <button className="ghost" onClick={() => onNavigate('action')}>
-            Start a workout →
+          <button className="ghost" onClick={() => onNavigate('train')}>
+            Let’s train →
           </button>
         </div>
       </div>

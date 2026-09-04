@@ -7,21 +7,35 @@ research-grounded engine — no accounts, no server, no API keys. All data stays
 
 | # | Use case | Where in the app |
 |---|----------|------------------|
-| 1 | **Complete Fitness Blueprint** — coach-style interview (age, height, weight, body fat, fitness level, medical conditions, injuries, equipment, schedule, sleep, stress, diet, lifestyle) → goal-based "marching orders" overview (lose X kg, train N×/week, steps, protein range, HIIT, sleep, hydration) plus the full system | Intake wizard → **Blueprint** tab |
-| 2 | **Body Transformation Roadmap** — the fastest *realistic* path to your goal, in phases with weekly tracking, optimized for long-term results | **Roadmap** tab |
-| 3 | **Nutrition Coach** — calorie & protein targets, meal ideas per slot (breakfast/lunch/dinner/snacks) for your diet preference, hydration, evidence-graded supplement guidance (creatine, vitamin D, omega-3, magnesium, probiotics…) and sustainable habits instead of restriction | **Nutrition** tab |
+| 1 | **Complete Fitness Blueprint** — coach-style interview (age, height, weight, body fat, fitness level, medical conditions, injuries, equipment, schedule, sleep, stress, diet, lifestyle) → goal-based "marching orders" overview (lose X kg, train N×/week, steps, protein range, HIIT, sleep, hydration) plus the full system | Intake wizard → More → **Plan & roadmap** |
+| 2 | **Body Transformation Roadmap** — the fastest *realistic* path to your goal, in phases with weekly tracking, optimized for long-term results | More → **Plan & roadmap** |
+| 3 | **Nutrition Coach** — calorie & protein targets, meal ideas per slot (breakfast/lunch/dinner/snacks) for your diet preference, hydration, evidence-graded supplement guidance (creatine, vitamin D, omega-3, magnesium, probiotics…) and sustainable habits instead of restriction | More → **Nutrition** |
 | 4 | **Fat Loss Expert** — all statistics in one place: weight-trend chart (daily + 7-day average + goal line), the adjustment engine that reads your weigh-in trend and tells you exactly what to change when loss stalls, training volume and strength trends | **Progress** tab |
-| 5 | **Habit Builder** — behavioral diagnosis of what breaks your consistency, and an anchored-habit system with streaks, built on habits rather than willpower | **Habits** tab |
+| 5 | **Habit Builder** — behavioral diagnosis of what breaks your consistency, and an anchored-habit system with streaks, built on habits rather than willpower | More → **Habits** |
 
-The **Action** tab holds the training programs themselves — preset templates (full-body ×3,
-upper/lower ×4, PPL ×6, 30-min express, bodyweight travel) generated through the same injury- and
-equipment-aware builder, a full program editor (swap exercises, sets, rep targets), and a live
-workout logger in the style of the best trackers (Hevy/Strong): each set prefills last session's
-weight × reps, one tap marks it done and starts a 90 s rest timer, and finishing stores volume,
-duration and PR flags.
+## The home screen: "Let's train"
 
-The **Today** tab ties it together: morning weigh-in, workout start/check-off and habit streaks feed
-the Progress engines.
+The app opens on one big button. It starts the next session in your program rotation (the one
+after the last session you logged), shows what it is and roughly how long it takes, and lets you
+pick a different session if today calls for it. Under the button: your week as a checklist
+(strength days tick off by session name, conditioning days by count), cardio/endurance/stretch
+proposals one tap away, and your last few workouts.
+
+The workout logger is in the style of the best trackers (Hevy/Strong): each set prefills last
+session's weight × reps, one tap marks it done and starts a 90 s rest timer, and finishing stores
+volume, duration and PR flags. Programs — presets (full-body ×3, upper/lower ×4, PPL ×6, 30-min
+express, bodyweight travel), the research-matrix recommendation, and a full editor — live under
+More → Settings.
+
+The bottom bar has three items: **Progress**, **Train** (centre) and **More**. Everything that is
+not training sits behind More.
+
+## Look
+
+White paper, dark ink, handwritten type: [Caveat](https://fonts.google.com/specimen/Caveat) for
+headings and the call-to-action, [Patrick Hand](https://fonts.google.com/specimen/Patrick+Hand)
+for body copy. Both are SIL Open Font License and self-hosted in `public/fonts/` so the installed
+PWA works offline.
 
 ## Research the engine encodes
 
@@ -47,7 +61,7 @@ Every plan screen has a "research behind these numbers" panel with the citations
 ```bash
 npm install
 npm run dev       # local dev server
-npm run test      # 45 engine tests
+npm run test      # engine tests (vitest)
 npm run build     # production build in dist/ (static, host anywhere)
 ```
 

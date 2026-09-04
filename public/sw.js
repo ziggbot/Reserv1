@@ -1,8 +1,16 @@
 /* Minimal offline-shell service worker: cache-first for same-origin GETs. */
-const CACHE = 'fitblueprint-v1'
+const CACHE = 'fitblueprint-v2'
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './icon.svg'])))
+  event.waitUntil(caches.open(CACHE).then((c) => c.addAll([
+      './',
+      './index.html',
+      './icon.svg',
+      './fonts/caveat-latin.woff2',
+      './fonts/caveat-latin-ext.woff2',
+      './fonts/patrick-hand-latin.woff2',
+      './fonts/patrick-hand-latin-ext.woff2',
+    ])))
   self.skipWaiting()
 })
 

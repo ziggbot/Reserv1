@@ -4,8 +4,8 @@
   "description": "Personalized fitness blueprint, transformation roadmap, nutrition coaching, fat-loss strategy and habit building — grounded in current health research.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
     {
       "src": "./icon.svg",
