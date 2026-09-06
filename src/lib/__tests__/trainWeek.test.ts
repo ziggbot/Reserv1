@@ -152,3 +152,17 @@ describe('rollingCycle', () => {
     expect(conditioning.slice(1).every((d) => !d.done)).toBe(true)
   })
 })
+
+describe('custom exercises', () => {
+  it('adds trimmed, de-duplicated names and removes them', async () => {
+    const { useAppStore } = await import('../../state/store')
+    const st = useAppStore.getState()
+    expect(st.addCustomExercise('  Hack squat  ')).toBe('Hack squat')
+    expect(st.addCustomExercise('hack squat')).toBe('Hack squat') // case-insensitive duplicate
+    expect(st.addCustomExercise('   ')).toBeNull()
+    st.addCustomExercise('Cable crunch')
+    expect(useAppStore.getState().customExercises).toEqual(['Cable crunch', 'Hack squat'])
+    st.removeCustomExercise('Hack squat')
+    expect(useAppStore.getState().customExercises).toEqual(['Cable crunch'])
+  })
+})

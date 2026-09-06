@@ -4,7 +4,6 @@ import { getSession } from '../../state/session'
 import { eraseAccount } from '../../state/accounts'
 import { tr, useLocale } from '../../i18n'
 import LanguageToggle from '../../i18n/LanguageToggle'
-import TrainingProgramCard from './TrainingProgramCard'
 import CoachSettingsCard from './CoachSettingsCard'
 import CloudSyncCard from './CloudSyncCard'
 
@@ -49,8 +48,8 @@ export default function SettingsView({ onLock }: { onLock: () => void }) {
         <h1>{tr('Settings', 'Inställningar')}</h1>
         <div className="date">
           {tr(
-            'Program, cloud sync, coach, and your data. Weight and goal live under Progress.',
-            'Program, molnsynk, coach och dina data. Vikt och mål finns under Framsteg.',
+            'Language, cloud sync, coach, and your data. Your program lives under More → Training program; weight and goal under Progress.',
+            'Språk, molnsynk, coach och dina data. Programmet finns under Mer → Träningsprogram, vikt och mål under Framsteg.',
           )}
         </div>
       </div>
@@ -65,8 +64,6 @@ export default function SettingsView({ onLock }: { onLock: () => void }) {
         </p>
         <LanguageToggle />
       </div>
-
-      <TrainingProgramCard />
 
       <CloudSyncCard />
 

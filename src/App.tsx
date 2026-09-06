@@ -13,9 +13,9 @@ import CoachFab from './features/coach/CoachFab'
 import { clearSession, getSession } from './state/session'
 import { stopSync } from './state/cloudSync'
 import { tr, useLocale } from './i18n'
-import LanguageToggle from './i18n/LanguageToggle'
+import ProgramView from './features/program/ProgramView'
 
-export type Tab = 'train' | 'progress' | 'more' | 'blueprint' | 'nutrition' | 'longevity' | 'habits' | 'settings'
+export type Tab = 'train' | 'progress' | 'more' | 'program' | 'blueprint' | 'nutrition' | 'longevity' | 'habits' | 'settings'
 
 /** The three things in the bottom bar. Training sits in the middle. */
 function nav(): { id: Tab; label: string; icon: string }[] {
@@ -29,6 +29,12 @@ function nav(): { id: Tab; label: string; icon: string }[] {
 /** Everything that is not training lives one tap away, behind More. */
 function secondary(): { id: Tab; label: string; icon: string; desc: string }[] {
   return [
+    {
+      id: 'program',
+      label: tr('Training program', 'Träningsprogram'),
+      icon: '🏋️',
+      desc: tr('Your program, sessions, exercises and training days', 'Ditt program, pass, övningar och träningsdagar'),
+    },
     {
       id: 'blueprint',
       label: tr('Plan & roadmap', 'Plan & vägkarta'),
@@ -52,7 +58,7 @@ function secondary(): { id: Tab; label: string; icon: string; desc: string }[] {
       id: 'settings',
       label: tr('Settings', 'Inställningar'),
       icon: '⚙️',
-      desc: tr('Program, training days, coach, data & privacy', 'Program, träningsdagar, coach, data & integritet'),
+      desc: tr('Language, cloud sync, coach, data & privacy', 'Språk, molnsynk, coach, data & integritet'),
     },
   ]
 }
@@ -121,6 +127,7 @@ export default function App() {
       {tab === 'nutrition' && <NutritionView />}
       {tab === 'longevity' && <LongevityView />}
       {tab === 'habits' && <HabitsView />}
+      {tab === 'program' && <ProgramView />}
       {tab === 'settings' && <SettingsView onLock={lock} />}
       <Disclaimer />
       {!workoutTakeover && <CoachFab />}
@@ -190,7 +197,6 @@ function Header({ onLock }: { onLock?: () => void }) {
       <div>
         <div className="title">FitBlueprint</div>
       </div>
-      <LanguageToggle />
       {onLock && session && (
         <button className="lock-btn" onClick={onLock} title={tr('Lock & switch profile', 'Lås & byt profil')}>
           <span aria-hidden>🔒</span> {session.displayName}

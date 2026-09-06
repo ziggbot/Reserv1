@@ -203,7 +203,7 @@ export default function Blueprint({ onNavigate }: { onNavigate: (t: Tab) => void
         </p>
         {schedule.rotationNote && <p className="muted small">🔁 {schedule.rotationNote}</p>}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 6 }}>
-          <button className="primary" onClick={() => onNavigate('settings')}>
+          <button className="primary" onClick={() => onNavigate('program')}>
             {tr('✏️ Adjust my plan', '✏️ Justera min plan')}
           </button>
           <button className="ghost" onClick={() => onNavigate('train')}>

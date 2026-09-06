@@ -166,7 +166,7 @@ export default function TrainHome({ onNavigate }: { onNavigate: (t: Tab) => void
         </p>
         {schedule.rotationNote && <p className="muted small">🔁 {schedule.rotationNote}</p>}
         <p className="small">
-          <button className="link" onClick={() => onNavigate('settings')}>
+          <button className="link" onClick={() => onNavigate('program')}>
             {tr('Change program or training days', 'Byt program eller träningsdagar')}
           </button>
         </p>

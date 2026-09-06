@@ -62,6 +62,7 @@ type AppData = Pick<
   | 'coachSettings'
   | 'coachApiKeys'
   | 'coachAssessment'
+  | 'customExercises'
 >
 
 const INITIAL_DATA: AppData = {
@@ -80,6 +81,7 @@ const INITIAL_DATA: AppData = {
   coachSettings: DEFAULT_COACH_SETTINGS,
   coachApiKeys: {},
   coachAssessment: null,
+  customExercises: [],
 }
 
 export interface WorkoutLogEntry {
@@ -106,6 +108,8 @@ interface AppState {
   coachApiKeys: CoachApiKeys
   /** Latest LLM assessment shown under Progress, keyed to the data it was built from. */
   coachAssessment: CoachAssessment | null
+  /** Exercises the user added themselves; offered in the program editor next to the built-in library. */
+  customExercises: string[]
 
   setProfile: (p: Profile) => void
   resetAll: () => void
@@ -129,6 +133,8 @@ interface AppState {
   setCoachSettings: (patch: Partial<CoachSettings>) => void
   setCoachApiKey: (provider: 'claude' | 'openai', key: string | undefined) => void
   setCoachAssessment: (a: CoachAssessment | null) => void
+  addCustomExercise: (name: string) => string | null
+  removeCustomExercise: (name: string) => void
 }
 
 export interface CoachAssessment {
@@ -387,6 +393,18 @@ export const useAppStore = create<AppState>()(
       setCoachSettings: (patch) => set((s) => ({ coachSettings: { ...s.coachSettings, ...patch } })),
 
       setCoachAssessment: (a) => set({ coachAssessment: a }),
+
+      addCustomExercise: (name) => {
+        const clean = name.trim().replace(/\s+/g, ' ')
+        if (!clean) return null
+        const exists = get().customExercises.find((n) => n.toLowerCase() === clean.toLowerCase())
+        if (exists) return exists
+        set((s) => ({ customExercises: [...s.customExercises, clean].sort((a, b) => a.localeCompare(b)) }))
+        return clean
+      },
+
+      removeCustomExercise: (name) =>
+        set((s) => ({ customExercises: s.customExercises.filter((n) => n !== name) })),
 
       setCoachApiKey: (provider, key) =>
         set((s) => {

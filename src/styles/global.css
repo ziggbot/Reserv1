@@ -138,8 +138,6 @@ input, select, textarea { font-family: inherit; }
   cursor: pointer;
 }
 .lang-toggle button.active { background: var(--ink); color: #fff; }
-.app-header .lang-toggle { margin-left: auto; }
-.app-header .lock-btn { margin-left: 8px; }
 
 /* ---------- Cards → loose notebook sections ---------- */
 .card {
@@ -555,6 +553,31 @@ details.evidence summary { cursor: pointer; color: var(--text-dim); font-size: 0
 }
 .icon-btn { padding: 6px 10px !important; font-size: 1rem !important; }
 .small-btn { padding: 5px 12px !important; font-size: 1.05rem !important; margin-top: 6px; }
+
+/* ---------- Custom exercises ---------- */
+.editor-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.new-exercise { display: flex; gap: 8px; align-items: stretch; margin: 8px 0 4px; }
+.new-exercise input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--sketch);
+  background: #fff;
+  color: var(--text);
+  font-size: 1rem;
+}
+.new-exercise .small-btn { margin-top: 0; }
+.custom-list { list-style: none; padding: 0; margin: 6px 0; }
+.custom-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 2px;
+  border-bottom: 1.5px dashed var(--rule);
+}
+.custom-list li:last-child { border-bottom: none; }
 
 /* ---------- Active workout logger ---------- */
 .workout-screen { padding-bottom: 76px; }

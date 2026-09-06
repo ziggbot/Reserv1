@@ -120,11 +120,32 @@ export function ProgramEditor({
   onCancel: () => void
 }) {
   const profile = useAppStore((s) => s.profile)!
+  const customExercises = useAppStore((s) => s.customExercises)
+  const addCustomExercise = useAppStore((s) => s.addCustomExercise)
   const [draft, setDraft] = useState<WorkoutProgram>(() => JSON.parse(JSON.stringify(program)))
+  const [newName, setNewName] = useState<{ session: number; text: string } | null>(null)
   const library = useMemo(
     () => exerciseLibrary(profile.equipment, profile.injuries),
     [profile.equipment, profile.injuries],
   )
+  const known = (name: string) => library.some((l) => l.name === name) || customExercises.includes(name)
+
+  const appendExercise = (si: number, name: string) =>
+    setDraft((d) => ({
+      ...d,
+      sessions: d.sessions.map((s, i) =>
+        i === si
+          ? { ...s, exercises: [...s.exercises, { name, sets: 3, reps: '8–12', rpe: 'RPE 7–8 (1–3 reps in reserve)' }] }
+          : s,
+      ),
+    }))
+
+  const createExercise = (si: number) => {
+    const name = addCustomExercise(newName?.text ?? '')
+    if (!name) return
+    appendExercise(si, name)
+    setNewName(null)
+  }
 
   const updateSession = (idx: number, patch: Partial<WorkoutSession>) =>
     setDraft((d) => ({
@@ -133,7 +154,7 @@ export function ProgramEditor({
     }))
 
   return (
-    <main>
+    <div className="program-editor">
       <div className="card">
         <h1>{tr('Customize your program', 'Anpassa ditt program')}</h1>
         <p className="muted small">
@@ -168,13 +189,24 @@ export function ProgramEditor({
                   })
                 }
               >
-                {!library.some((l) => l.name === ex.name) && <option value={ex.name}>{L(ex.name)}</option>}
-                {library.map((l) => (
-                  <option key={l.name} value={l.name}>
-                    {l.flagged ? '⚠ ' : ''}
-                    {L(l.name)}
-                  </option>
-                ))}
+                {!known(ex.name) && <option value={ex.name}>{L(ex.name)}</option>}
+                {customExercises.length > 0 && (
+                  <optgroup label={tr('My exercises', 'Mina övningar')}>
+                    {customExercises.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                <optgroup label={tr('Library', 'Bibliotek')}>
+                  {library.map((l) => (
+                    <option key={l.name} value={l.name}>
+                      {l.flagged ? '⚠ ' : ''}
+                      {L(l.name)}
+                    </option>
+                  ))}
+                </optgroup>
               </select>
               <input
                 type="number"
@@ -211,22 +243,47 @@ export function ProgramEditor({
               </button>
             </div>
           ))}
-          <button
-            className="ghost"
-            onClick={() =>
-              updateSession(si, {
-                exercises: [
-                  ...s.exercises,
-                  { name: library[0]?.name ?? 'Exercise', sets: 3, reps: '8–12', rpe: 'RPE 7–8 (1–3 reps in reserve)' },
-                ],
-              })
-            }
-          >
-            + {tr('Add exercise', 'Lägg till övning')}
-          </button>
+          <div className="editor-actions">
+            <button className="ghost" onClick={() => appendExercise(si, library[0]?.name ?? 'Exercise')}>
+              + {tr('Add exercise', 'Lägg till övning')}
+            </button>
+            {newName?.session !== si && (
+              <button className="ghost" onClick={() => setNewName({ session: si, text: '' })}>
+                ✎ {tr('New exercise…', 'Ny övning…')}
+              </button>
+            )}
+          </div>
+          {newName?.session === si && (
+            <div className="new-exercise">
+              <input
+                type="text"
+                autoFocus
+                value={newName.text}
+                placeholder={tr('Exercise name, e.g. Hack squat', 'Övningens namn, t.ex. Hacklift')}
+                aria-label={tr('New exercise name', 'Namn på ny övning')}
+                onChange={(e) => setNewName({ session: si, text: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') createExercise(si)
+                  if (e.key === 'Escape') setNewName(null)
+                }}
+              />
+              <button className="primary small-btn" disabled={!newName.text.trim()} onClick={() => createExercise(si)}>
+                {tr('Add', 'Lägg till')}
+              </button>
+              <button className="ghost small-btn" onClick={() => setNewName(null)}>
+                {tr('Cancel', 'Avbryt')}
+              </button>
+            </div>
+          )}
+          <p className="muted small">
+            {tr(
+              'Missing something? Create your own exercise — it is saved to your profile and shows up under “My exercises” next time.',
+              'Saknas något? Skapa en egen övning – den sparas i din profil och finns under ”Mina övningar” nästa gång.',
+            )}
+          </p>
         </div>
       ))}
-    </main>
+    </div>
   )
 }
 

@@ -6,10 +6,14 @@ import { threeDayFullBody } from '../../lib/threeDayFullBody'
 import { ProgramEditor } from '../action/ActionView'
 import { tr, L, useLocale } from '../../i18n'
 
-export default function TrainingProgramCard() {
+export default function TrainingProgramCard({ onEditingChange }: { onEditingChange?: (editing: boolean) => void } = {}) {
   useLocale()
   const { profile, customProgram, programChoice, setCustomProgram } = useAppStore()
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditingState] = useState(false)
+  const setEditing = (v: boolean) => {
+    setEditingState(v)
+    onEditingChange?.(v)
+  }
   if (!profile) return null
 
   const rec = recommendProgram(profile)
