@@ -30,6 +30,21 @@ More → Settings.
 The bottom bar has three items: **Progress**, **Train** (centre) and **More**. Everything that is
 not training sits behind More.
 
+## Cloud sync (Supabase)
+
+Optional. Everything works offline on one device; sign in under More → Settings → Cloud sync and
+the profile's data (workouts, weigh-ins, program, plan history) is mirrored to your own Supabase
+project so a phone and a laptop show the same thing. Coach API keys never leave the device.
+
+1. Create a free project at supabase.com and run `supabase/schema.sql` once in the SQL editor
+   (one `app_state` table, row-level security so each user only sees their own row).
+2. Either paste the Project URL and anon key under Settings → Cloud sync → Project settings, or
+   bake them into the build with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (the Pages
+   workflow reads them from repository secrets of the same names).
+3. Create an account with email + password, sign in on each device.
+
+Sync is last-write-wins on the whole profile, debounced 1.5 s after each change.
+
 ## Look
 
 White paper, dark ink, handwritten type: [Caveat](https://fonts.google.com/specimen/Caveat) for
@@ -52,7 +67,7 @@ Every plan screen has a "research behind these numbers" panel with the citations
 
 ## Tech
 
-- Vite + React 18 + TypeScript, zustand (persisted to localStorage)
+- Vite + React 18 + TypeScript, zustand (persisted to localStorage, optionally mirrored to Supabase)
 - Installable PWA with an offline service worker
 - Vitest unit tests on the whole calculation/adjustment engine
 

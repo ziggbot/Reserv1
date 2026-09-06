@@ -164,6 +164,8 @@ export interface LoggedExercise {
   targetReps: string
   sets: LoggedSet[]
   linkUrl?: string
+  /** Skipped mid-workout: its sets are ignored when the workout is saved. */
+  skipped?: boolean
 }
 
 export interface ActiveWorkout {

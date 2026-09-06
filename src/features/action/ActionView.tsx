@@ -219,7 +219,7 @@ export function ProgramEditor({
 /* ---------------- Active workout logger ---------------- */
 
 export function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedWorkout) => void }) {
-  const { activeWorkout, updateActiveSet, addActiveSet, cancelWorkout, finishWorkout } = useAppStore()
+  const { activeWorkout, updateActiveSet, addActiveSet, skipActiveExercise, cancelWorkout, finishWorkout } = useAppStore()
   const [now, setNow] = useState(Date.now())
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null)
   const [confirmCancel, setConfirmCancel] = useState(false)
@@ -255,17 +255,30 @@ export function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedW
       )}
 
       {activeWorkout.exercises.map((ex, exIdx) => (
-        <div className="exercise-block" key={exIdx}>
-          <h3>
-            {ex.linkUrl ? (
-              <a href={ex.linkUrl} target="_blank" rel="noopener noreferrer">
-                {ex.name} ↗
-              </a>
-            ) : (
-              ex.name
-            )}{' '}
-            <span className="muted small">target {ex.targetReps}</span>
-          </h3>
+        <div className={`exercise-block ${ex.skipped ? 'skipped' : ''}`} key={exIdx}>
+          <div className="exercise-head">
+            <h3>
+              {ex.linkUrl ? (
+                <a href={ex.linkUrl} target="_blank" rel="noopener noreferrer">
+                  {ex.name} ↗
+                </a>
+              ) : (
+                ex.name
+              )}{' '}
+              <span className="muted small">target {ex.targetReps}</span>
+            </h3>
+            <button
+              className="ghost small-btn"
+              onClick={() => skipActiveExercise(exIdx, !ex.skipped)}
+              aria-label={ex.skipped ? `Do ${ex.name} after all` : `Skip ${ex.name}`}
+            >
+              {ex.skipped ? 'Undo skip' : 'Skip'}
+            </button>
+          </div>
+          {ex.skipped ? (
+            <p className="muted small">Skipped today. Your last numbers stay saved for next time.</p>
+          ) : (
+            <>
           <div className="set-header">
             <span>Set</span>
             <span>kg</span>
@@ -307,6 +320,8 @@ export function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedW
           <button className="ghost small-btn" onClick={() => addActiveSet(exIdx)}>
             + Add set
           </button>
+            </>
+          )}
         </div>
       ))}
 

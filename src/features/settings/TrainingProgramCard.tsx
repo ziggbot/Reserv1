@@ -5,17 +5,15 @@ import { recommendProgram } from '../../lib/programMatrix'
 import { threeDayFullBody } from '../../lib/threeDayFullBody'
 import { ProgramEditor } from '../action/ActionView'
 
-type Choice = 'recommended' | 'imported' | 'generated' | string // preset id
-
 export default function TrainingProgramCard() {
-  const { profile, customProgram, setCustomProgram } = useAppStore()
+  const { profile, customProgram, programChoice, setCustomProgram } = useAppStore()
   const [editing, setEditing] = useState(false)
   if (!profile) return null
 
   const rec = recommendProgram(profile)
-  const commit = (desc: string, program: (typeof rec)['program'] | null) => {
+  const commit = (desc: string, program: (typeof rec)['program'] | null, choice: string) => {
     useAppStore.getState().commitPlanRevision('user', desc)
-    setCustomProgram(program)
+    setCustomProgram(program, choice)
   }
 
   function stepDays(delta: number) {
@@ -43,7 +41,7 @@ export default function TrainingProgramCard() {
       <ProgramEditor
         program={program}
         onSave={(p) => {
-          commit('Edited program', p)
+          commit('Edited program', p, 'custom')
           setEditing(false)
         }}
         onCancel={() => setEditing(false)}
@@ -51,7 +49,9 @@ export default function TrainingProgramCard() {
     )
   }
 
-  const current: Choice = !customProgram ? 'recommended' : 'custom'
+  const current = programChoice ?? (customProgram ? 'custom' : 'recommended')
+  const active = customProgram ?? rec.program
+  const mark = (id: string) => (current === id ? <span className="check" aria-label="selected">✓</span> : null)
 
   return (
     <div className="card">
@@ -92,38 +92,61 @@ export default function TrainingProgramCard() {
         <button
           type="button"
           className={`choice ${current === 'recommended' ? 'selected' : ''}`}
-          onClick={() => commit('Use recommended program', null)}
+          onClick={() => commit('Use recommended program', null, 'recommended')}
         >
-          Recommended
+          {mark('recommended')}Recommended
           <span className="desc">{rec.splitName} — research-based for you</span>
         </button>
         <button
           type="button"
-          className="choice"
-          onClick={() => commit('Use imported 3 Day Full Body', threeDayFullBody(profile))}
+          className={`choice ${current === 'imported' ? 'selected' : ''}`}
+          onClick={() => commit('Use imported 3 Day Full Body', threeDayFullBody(profile), 'imported')}
         >
-          My 3 Day Full Body log
+          {mark('imported')}My 3 Day Full Body log
           <span className="desc">Your imported program — latest weights prefilled</span>
         </button>
         {PROGRAM_PRESETS.filter((p) => p.id !== 'recommended').map((p) => (
           <button
             key={p.id}
             type="button"
-            className="choice"
-            onClick={() => commit(`Use preset: ${p.name}`, buildPresetProgram(profile, p.id))}
+            className={`choice ${current === p.id ? 'selected' : ''}`}
+            onClick={() => commit(`Use preset: ${p.name}`, buildPresetProgram(profile, p.id), p.id)}
           >
-            {p.name}
+            {mark(p.id)}{p.name}
             <span className="desc">{p.description}</span>
           </button>
         ))}
         <button
           type="button"
-          className="choice"
-          onClick={() => commit('Use generated program', buildProgram(profile))}
+          className={`choice ${current === 'generated' ? 'selected' : ''}`}
+          onClick={() => commit('Use generated program', buildProgram(profile), 'generated')}
         >
-          Generated for you
+          {mark('generated')}Generated for you
           <span className="desc">Built from your interview answers</span>
         </button>
+      </div>
+
+      <div className="program-overview">
+        <h3>
+          Your program: {active.splitName}
+          {current === 'custom' && <span className="pill info">edited</span>}
+        </h3>
+        <p className="muted small">
+          {active.sessions.length} sessions · {profile.daysPerWeek} training days a week. Edits you make here
+          are saved to this profile.
+        </p>
+        {active.sessions.map((s) => (
+          <div className="overview-session" key={s.name}>
+            <strong>{s.name}</strong> <span className="muted small">{s.focus}</span>
+            <ul className="exercise-peek" style={{ paddingLeft: 0 }}>
+              {s.exercises.map((e, i) => (
+                <li key={i}>
+                  {e.name} <span>{e.sets}×{e.reps}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
@@ -131,7 +154,7 @@ export default function TrainingProgramCard() {
           ✏️ Edit current program
         </button>
         {customProgram && (
-          <button className="ghost" onClick={() => commit('Reset to recommended', null)}>
+          <button className="ghost" onClick={() => commit('Reset to recommended', null, 'recommended')}>
             ↩ Reset to recommended
           </button>
         )}

@@ -12,6 +12,7 @@ import {
 import { setSession } from '../../state/session'
 import { bindAccountStorage, importLegacyState, todayIso } from '../../state/store'
 import { storageIsPersistent } from '../../state/storage'
+import { startSync } from '../../state/cloudSync'
 
 type Mode = 'list' | 'create' | 'unlock'
 
@@ -24,6 +25,7 @@ export default function AccountGate({ onReady }: { onReady: () => void }) {
   async function finishUnlock(meta: AccountMeta, key: CryptoKey | null) {
     setSession({ accountId: meta.id, displayName: meta.displayName, key })
     await bindAccountStorage(storageNameFor(meta.id))
+    void startSync()
     onReady()
   }
 

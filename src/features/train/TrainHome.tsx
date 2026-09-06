@@ -2,16 +2,28 @@ import { useState } from 'react'
 import { useAppStore, todayIso } from '../../state/store'
 import { defaultProgram } from '../../lib/threeDayFullBody'
 import { buildWeeklySchedule } from '../../lib/weeklySchedule'
-import { estimateMinutes, nextSession, startOfWeekIso, weekStatus } from '../../lib/trainWeek'
+import { estimateMinutes, nextSession, rollingCycle } from '../../lib/trainWeek'
+import { buildPresetProgram } from '../../lib/programs'
 import { ActiveWorkoutScreen, ActivitySection, WorkoutSummary } from '../action/ActionView'
-import type { ActivityCategory, CompletedWorkout, WorkoutProgram } from '../../lib/types'
+import type { ActivityCategory, CompletedWorkout, Profile, WorkoutProgram, WorkoutSession } from '../../lib/types'
 import type { Tab } from '../../App'
 
-const OTHER: { id: Exclude<ActivityCategory, 'strength'>; icon: string; label: string }[] = [
+type Other = Exclude<ActivityCategory, 'strength'> | 'bonus'
+
+const OTHER: { id: Other; icon: string; label: string }[] = [
   { id: 'cardio', icon: '🫀', label: 'Cardio' },
   { id: 'endurance', icon: '🏃', label: 'Endurance' },
   { id: 'stretch', icon: '🧘', label: 'Stretch' },
+  { id: 'bonus', icon: '💪', label: 'Bonus strength' },
 ]
+
+export const BONUS_SESSION_NAME = 'Bonus full body'
+
+/** A standalone full-body session that never counts toward the program rotation. */
+function bonusSession(profile: Profile): WorkoutSession {
+  const base = buildPresetProgram(profile, 'fullbody3').sessions[0]
+  return { ...base, name: BONUS_SESSION_NAME, focus: 'Whole-body strength · extra, outside your rotation' }
+}
 
 /**
  * The home screen. One job: get you into today's session with a single tap.
@@ -23,7 +35,7 @@ export default function TrainHome({ onNavigate }: { onNavigate: (t: Tab) => void
   const [picking, setPicking] = useState(false)
   const [pickedIndex, setPickedIndex] = useState<number | null>(null)
   const [peekIndex, setPeekIndex] = useState<number | null>(null)
-  const [other, setOther] = useState<Exclude<ActivityCategory, 'strength'> | null>(null)
+  const [other, setOther] = useState<Other | null>(null)
 
   if (!profile) return null
   if (activeWorkout) return <ActiveWorkoutScreen onFinished={setSummary} />
@@ -31,13 +43,13 @@ export default function TrainHome({ onNavigate }: { onNavigate: (t: Tab) => void
 
   const program: WorkoutProgram = defaultProgram(profile, customProgram)
   const today = todayIso()
-  const weekStart = startOfWeekIso(today)
   const next = nextSession(program, completedWorkouts)
   const chosenIndex = pickedIndex ?? next.index
   const chosen = program.sessions[chosenIndex] ?? next.session
   const schedule = buildWeeklySchedule(profile, program)
-  const week = weekStatus(schedule, completedWorkouts, weekStart)
-  const doneCount = week.filter((d) => d.done).length
+  const cycle = rollingCycle(program, schedule, completedWorkouts)
+  const week = cycle.days
+  const doneCount = cycle.doneCount
   const minutes = estimateMinutes(chosen, profile.minutesPerSession)
   const firstName = profile.name.split(' ')[0]
   const recent = [...completedWorkouts].slice(-3).reverse()
@@ -108,7 +120,11 @@ export default function TrainHome({ onNavigate }: { onNavigate: (t: Tab) => void
       <section className="section">
         <div className="section-head">
           <h2>This week</h2>
-          <span className="aside">{schedule.summaryLine}</span>
+          <span className="aside">
+            {cycle.startedOn
+              ? `rolling · started ${new Date(cycle.startedOn + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
+              : 'rolling · starts with your next session'}
+          </span>
         </div>
         <ol className="week-list">
           {week.map((day) => (
@@ -127,6 +143,10 @@ export default function TrainHome({ onNavigate }: { onNavigate: (t: Tab) => void
             </li>
           ))}
         </ol>
+        <p className="muted small">
+          {schedule.summaryLine}. The list resets the moment you finish the last session of the pass,
+          whatever day it is.
+        </p>
         <p className="muted small">
           👟 {schedule.dailySteps.toLocaleString()} steps a day. {schedule.conditioning.note}
         </p>
@@ -155,7 +175,8 @@ export default function TrainHome({ onNavigate }: { onNavigate: (t: Tab) => void
             </button>
           ))}
         </div>
-        {other && <ActivitySection category={other} />}
+        {other === 'bonus' && <BonusStrength session={bonusSession(profile)} onStart={startWorkout} />}
+        {other && other !== 'bonus' && <ActivitySection category={other} />}
       </section>
 
       {recent.length > 0 && (
@@ -180,5 +201,29 @@ export default function TrainHome({ onNavigate }: { onNavigate: (t: Tab) => void
         </section>
       )}
     </main>
+  )
+}
+
+function BonusStrength({ session, onStart }: { session: WorkoutSession; onStart: (s: WorkoutSession) => void }) {
+  return (
+    <div className="card">
+      <h2>
+        {session.name} <span className="pill info">{session.exercises.length} exercises</span>
+      </h2>
+      <p className="muted">
+        An extra whole-body session for days when you want more. It is logged like any workout but
+        leaves your rotation and this week’s checklist untouched.
+      </p>
+      <ul className="exercise-peek" style={{ paddingLeft: 0 }}>
+        {session.exercises.map((e, i) => (
+          <li key={i}>
+            {e.name} <span>{e.sets}×{e.reps}</span>
+          </li>
+        ))}
+      </ul>
+      <button className="primary" onClick={() => onStart(session)}>
+        ▶ Start bonus session
+      </button>
+    </div>
   )
 }

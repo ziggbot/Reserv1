@@ -80,3 +80,12 @@ A server-backed multi-device version must add, at minimum:
 
 Health data is a *special category* under Art. 9 — a server deployment raises the
 compliance bar substantially versus the current on-device design.
+
+## Optional cloud sync
+
+If you turn on Cloud sync (More → Settings), your profile's app data (interview answers, workouts,
+weigh-ins, habit checks, program and plan history, coach chat) is also stored in a Supabase project
+under an account you create with email and password. The project is one you set up and control;
+FitBlueprint has no server of its own. Data in that project is stored as plain JSON protected by
+Supabase authentication and row-level security, not by your profile passcode. Coach API keys are
+never uploaded. Sign out and delete the row (or the project) to remove the copy.

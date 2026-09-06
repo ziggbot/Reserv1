@@ -763,6 +763,46 @@ details.evidence summary { cursor: pointer; color: var(--text-dim); font-size: 0
 .timeline-icon { font-size: 1.2rem; flex-shrink: 0; }
 .timeline-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
+.timeline-week {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-family: var(--hand);
+  font-weight: 700;
+  font-size: 1.3rem;
+  border-bottom: 2px solid var(--ink);
+  margin: 14px 0 4px;
+  padding-bottom: 2px;
+}
+.timeline-week .small { font-family: var(--body); font-weight: 400; }
+
+/* ---------- Workout logger: skip ---------- */
+.exercise-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.exercise-head h3 { margin: 0; }
+.exercise-head .small-btn { margin-top: 0; flex-shrink: 0; }
+.exercise-block.skipped h3 { color: var(--text-dim); text-decoration: line-through; text-decoration-thickness: 1.5px; }
+
+/* ---------- Program choice + overview ---------- */
+.choice { position: relative; }
+.choice .check {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-family: var(--hand);
+  font-weight: 700;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+.choice.selected { padding-right: 34px; }
+.program-overview { margin-top: 16px; border-top: 2px solid var(--ink); padding-top: 8px; }
+.program-overview h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.overview-session { padding: 8px 0; border-bottom: 1.5px dashed var(--rule); }
+.overview-session:last-child { border-bottom: none; }
+.overview-session strong { font-family: var(--hand); font-size: 1.25rem; }
+.overview-session .exercise-peek { margin-top: 4px; }
+
 /* ---------- Weight chart ---------- */
 .weight-chart { width: 100%; min-width: 480px; height: auto; }
 .chart-grid { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 3 4; }

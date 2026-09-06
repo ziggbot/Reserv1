@@ -11,6 +11,7 @@ import SettingsView from './features/settings/SettingsView'
 import AccountGate from './features/auth/AccountGate'
 import CoachFab from './features/coach/CoachFab'
 import { clearSession, getSession } from './state/session'
+import { stopSync } from './state/cloudSync'
 
 export type Tab = 'train' | 'progress' | 'more' | 'blueprint' | 'nutrition' | 'longevity' | 'habits' | 'settings'
 
@@ -41,6 +42,7 @@ export default function App() {
   }
 
   const lock = () => {
+    stopSync()
     clearSession()
     setUnlocked(false)
     setTab('train')

@@ -4,13 +4,12 @@ import { getSession } from '../../state/session'
 import { eraseAccount } from '../../state/accounts'
 import TrainingProgramCard from './TrainingProgramCard'
 import CoachSettingsCard from './CoachSettingsCard'
+import CloudSyncCard from './CloudSyncCard'
 
 export default function SettingsView({ onLock }: { onLock: () => void }) {
-  const { profile, setProfile, resetAll, weighIns } = useAppStore()
+  const { profile, resetAll, weighIns } = useAppStore()
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmErase, setConfirmErase] = useState(false)
-  const [weight, setWeight] = useState(profile ? String(profile.weightKg) : '')
-  const [goalWeight, setGoalWeight] = useState(profile?.goalWeightKg ? String(profile.goalWeightKg) : '')
 
   if (!profile) return null
 
@@ -42,38 +41,14 @@ export default function SettingsView({ onLock }: { onLock: () => void }) {
 
   return (
     <main>
-      <div className="card">
+      <div className="home-greeting">
         <h1>Settings</h1>
-        <h2>Update your stats</h2>
-        <p className="muted small">
-          As your weight changes, targets should follow — update it here (or it’s picked up from your
-          latest weigh-ins) and every plan recalculates instantly.
-        </p>
-        <div className="field">
-          <label>Current weight (kg)</label>
-          <input type="number" step="0.1" value={weight} onChange={(e) => setWeight(e.target.value)} />
-        </div>
-        <div className="field">
-          <label>Goal weight (kg)</label>
-          <input type="number" step="0.1" value={goalWeight} onChange={(e) => setGoalWeight(e.target.value)} />
-        </div>
-        <button
-          className="primary"
-          disabled={!weight || Number(weight) < 35 || Number(weight) > 300}
-          onClick={() => {
-            useAppStore.getState().commitPlanRevision('user', 'Updated stats')
-            setProfile({
-              ...profile,
-              weightKg: Number(weight),
-              goalWeightKg: goalWeight === '' ? undefined : Number(goalWeight),
-            })
-          }}
-        >
-          Save & recalculate
-        </button>
+        <div className="date">Program, cloud sync, coach, and your data. Weight and goal live under Progress.</div>
       </div>
 
       <TrainingProgramCard />
+
+      <CloudSyncCard />
 
       <div className="card">
         <h2>🔐 Your data & privacy</h2>

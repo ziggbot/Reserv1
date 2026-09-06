@@ -3,6 +3,7 @@ import { useAppStore, todayIso, weeksSince } from '../../state/store'
 import { analyzeProgress, FAT_LOSS_PILLARS, rollingAverage } from '../../lib/fatloss'
 import { macroTargets, targetWeeklyLossKg, tdee } from '../../lib/calculations'
 import { buildHabitPlan, currentStreak } from '../../lib/habits'
+import { isoWeek, startOfWeekIso, addDaysIso } from '../../lib/trainWeek'
 import EvidencePanel from '../shared/EvidencePanel'
 import type { ActivityCategory, CompletedWorkout, WeighIn } from '../../lib/types'
 
@@ -22,9 +23,12 @@ const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
 }
 
 export default function ProgressView() {
-  const { profile, weighIns, planStartDate, completedWorkouts, workoutLog, habitChecks, addWeighIn } =
+  const { profile, weighIns, planStartDate, completedWorkouts, workoutLog, habitChecks, addWeighIn, setProfile } =
     useAppStore()
   const [weight, setWeight] = useState('')
+  const [statWeight, setStatWeight] = useState(profile ? String(profile.weightKg) : '')
+  const [goalWeight, setGoalWeight] = useState(profile?.goalWeightKg ? String(profile.goalWeightKg) : '')
+  const [statsSaved, setStatsSaved] = useState(false)
   if (!profile) return null
 
   const today = todayIso()
@@ -101,6 +105,39 @@ export default function ProgressView() {
             </button>
           </div>
         )}
+      </div>
+
+      <div className="card">
+        <h2>🎯 Your numbers</h2>
+        <p className="muted small">
+          Plan weight and goal. Update as you go and every target (calories, protein, pace) recalculates.
+        </p>
+        <div className="field">
+          <label>Current weight (kg)</label>
+          <input type="number" step="0.1" value={statWeight} onChange={(e) => setStatWeight(e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Goal weight (kg)</label>
+          <input type="number" step="0.1" value={goalWeight} onChange={(e) => setGoalWeight(e.target.value)} />
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            className="primary"
+            disabled={!statWeight || Number(statWeight) < 35 || Number(statWeight) > 300}
+            onClick={() => {
+              useAppStore.getState().commitPlanRevision('user', 'Updated stats')
+              setProfile({
+                ...profile,
+                weightKg: Number(statWeight),
+                goalWeightKg: goalWeight === '' ? undefined : Number(goalWeight),
+              })
+              setStatsSaved(true)
+            }}
+          >
+            Save & recalculate
+          </button>
+          {statsSaved && <span className="muted small">Saved.</span>}
+        </div>
       </div>
 
       <TrainingTimeline completedWorkouts={completedWorkouts} workoutLog={workoutLog} />
@@ -223,9 +260,10 @@ function TrainingTimeline({
   const checkedOnly = workoutLog.filter(
     (e) => !completedWorkouts.some((w) => w.date === e.date && w.sessionName === e.sessionName),
   )
+  // Newest first; within a day, the most recently logged session on top.
   const entries = [
-    ...completedWorkouts.map((w) => ({ ...w, checkedOnly: false })),
-    ...checkedOnly.map((e) => ({
+    ...completedWorkouts.map((w, order) => ({ ...w, checkedOnly: false, order })),
+    ...checkedOnly.map((e, i) => ({
       date: e.date,
       sessionName: e.sessionName,
       category: 'strength' as ActivityCategory,
@@ -234,45 +272,71 @@ function TrainingTimeline({
       totalVolumeKg: 0,
       exercises: [],
       checkedOnly: true,
+      order: -1 - i,
     })),
-  ].sort((a, b) => b.date.localeCompare(a.date))
+  ].sort((a, b) => b.date.localeCompare(a.date) || b.order - a.order)
+
+  // Group by ISO week so it is obvious which sessions belong together.
+  const weeks: { start: string; items: typeof entries }[] = []
+  for (const e of entries.slice(0, 40)) {
+    const start = startOfWeekIso(e.date)
+    const last = weeks[weeks.length - 1]
+    if (last && last.start === start) last.items.push(e)
+    else weeks.push({ start, items: [e] })
+  }
+  const shortDate = (iso: string) =>
+    new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+  const weekday = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short' })
 
   return (
     <div className="card">
       <h2>🗓️ Training timeline</h2>
       {entries.length === 0 ? (
         <p className="muted">
-          Every session you log in the Action tab lands here — strength, cardio, endurance and
-          stretching, newest first.
+          Every session you log from Let’s train lands here — strength, cardio, endurance and
+          stretching, newest first and grouped by week.
         </p>
       ) : (
-        <div className="timeline">
-          {entries.slice(0, 30).map((e, i) => {
-            const meta = CATEGORY_META[e.category ?? 'strength']
-            return (
-              <div className="timeline-entry" key={`${e.date}-${e.sessionName}-${i}`}>
-                <span className="timeline-icon" aria-hidden>
-                  {meta.icon}
+        <>
+          {weeks.map((wk) => (
+            <div key={wk.start}>
+              <div className="timeline-week">
+                <span>Week {isoWeek(wk.start)}</span>
+                <span className="muted small">
+                  {shortDate(wk.start)} – {shortDate(addDaysIso(wk.start, 6))} · {wk.items.length} session
+                  {wk.items.length > 1 ? 's' : ''}
                 </span>
-                <div className="timeline-body">
-                  <div className="timeline-head">
-                    <strong>{e.sessionName}</strong>
-                    <span className={`pill ${e.category === 'strength' ? 'info' : 'ok'}`}>{meta.label}</span>
-                  </div>
-                  <div className="muted small">
-                    {e.date}
-                    {e.checkedOnly
-                      ? ' · checked off'
-                      : e.category === 'strength'
-                        ? ` · ${e.durationMin} min · ${e.totalSets} sets · ${e.totalVolumeKg.toLocaleString()} kg volume`
-                        : ` · ${e.durationMin} min`}
-                  </div>
-                </div>
               </div>
-            )
-          })}
-          {entries.length > 30 && <p className="muted small">Showing the latest 30 sessions.</p>}
-        </div>
+              <div className="timeline">
+                {wk.items.map((e, i) => {
+                  const meta = CATEGORY_META[e.category ?? 'strength']
+                  return (
+                    <div className="timeline-entry" key={`${e.date}-${e.sessionName}-${i}`}>
+                      <span className="timeline-icon" aria-hidden>
+                        {meta.icon}
+                      </span>
+                      <div className="timeline-body">
+                        <div className="timeline-head">
+                          <strong>{e.sessionName}</strong>
+                          <span className={`pill ${e.category === 'strength' ? 'info' : 'ok'}`}>{meta.label}</span>
+                        </div>
+                        <div className="muted small">
+                          {weekday(e.date)} {shortDate(e.date)}
+                          {e.checkedOnly
+                            ? ' · checked off'
+                            : e.category === 'strength'
+                              ? ` · ${e.durationMin} min · ${e.totalSets} sets · ${e.totalVolumeKg.toLocaleString()} kg volume`
+                              : ` · ${e.durationMin} min`}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+          {entries.length > 40 && <p className="muted small">Showing the latest 40 sessions.</p>}
+        </>
       )}
     </div>
   )

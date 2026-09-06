@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDaysIso, estimateMinutes, inWeek, nextSession, startOfWeekIso, weekStatus } from '../trainWeek'
+import { addDaysIso, estimateMinutes, inWeek, isoWeek, nextSession, rollingCycle, startOfWeekIso, weekStatus } from '../trainWeek'
 import { threeDayFullBody } from '../threeDayFullBody'
 import { buildWeeklySchedule } from '../weeklySchedule'
 import type { CompletedWorkout, Profile } from '../types'
@@ -99,5 +99,56 @@ describe('estimateMinutes', () => {
     const program = threeDayFullBody(profile)
     expect(estimateMinutes(program.sessions[0], 60)).toBe(60) // 27 sets → capped
     expect(estimateMinutes(program.sessions[2], 90)).toBe(65) // 18 sets → 64 → 65
+  })
+})
+
+describe('isoWeek', () => {
+  it('matches the ISO calendar, including year boundaries', () => {
+    expect(isoWeek('2026-09-04')).toBe(36)
+    expect(isoWeek('2026-01-01')).toBe(1)
+    expect(isoWeek('2027-01-01')).toBe(53) // Friday, still ISO week 53 of 2026
+    expect(isoWeek('2024-12-30')).toBe(1) // Monday, ISO week 1 of 2025
+  })
+})
+
+describe('rollingCycle', () => {
+  const program = threeDayFullBody(profile)
+  const schedule = buildWeeklySchedule(profile, program)
+  const [p1, p2, p3] = program.sessions.map((s) => s.name)
+
+  it('starts empty', () => {
+    const c = rollingCycle(program, schedule, [])
+    expect(c.doneCount).toBe(0)
+    expect(c.startedOn).toBeNull()
+  })
+  it('ticks sessions off across calendar weeks', () => {
+    const c = rollingCycle(program, schedule, [done('2026-08-28', p1), done('2026-09-02', p3)])
+    const strength = c.days.filter((d) => d.kind === 'strength')
+    expect(strength.map((d) => d.done)).toEqual([true, false, true])
+    expect(c.startedOn).toBe('2026-08-28')
+  })
+  it('resets the moment the last session of the pass is completed', () => {
+    const full = [done('2026-08-28', p1), done('2026-09-01', p2), done('2026-09-03', p3)]
+    const c = rollingCycle(program, schedule, full)
+    expect(c.days.every((d) => !d.done)).toBe(true)
+    expect(c.startedOn).toBeNull()
+    const next = rollingCycle(program, schedule, [...full, done('2026-09-05', p2)])
+    expect(next.days.filter((d) => d.kind === 'strength').map((d) => d.done)).toEqual([false, true, false])
+    expect(next.startedOn).toBe('2026-09-05')
+  })
+  it('counts conditioning only since the cycle began and ignores bonus sessions', () => {
+    const history = [
+      done('2026-08-20', 'Zone-2 cardio', 'cardio'), // before the pass completed below
+      done('2026-08-21', p1),
+      done('2026-08-22', p2),
+      done('2026-08-23', p3),
+      done('2026-08-25', 'Bonus full body'),
+      done('2026-08-26', 'Zone-2 cardio', 'cardio'),
+    ]
+    const c = rollingCycle(program, schedule, history)
+    expect(c.days.filter((d) => d.kind === 'strength').every((d) => !d.done)).toBe(true)
+    const conditioning = c.days.filter((d) => d.kind !== 'strength')
+    expect(conditioning[0].done).toBe(true)
+    expect(conditioning.slice(1).every((d) => !d.done)).toBe(true)
   })
 })

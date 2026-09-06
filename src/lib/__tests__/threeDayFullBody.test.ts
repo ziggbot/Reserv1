@@ -108,4 +108,18 @@ describe('seed memory (last logged numbers only)', () => {
     expect(bench.sets[0].weightKg).toBe(42.5)
     useAppStore.getState().cancelWorkout()
   })
+
+  it('skipping an exercise drops it from the saved workout and clears its done marks', () => {
+    const program = threeDayFullBody(profile)
+    const st = useAppStore.getState()
+    st.startWorkout(program.sessions[1])
+    st.updateActiveSet(0, 0, { done: true })
+    st.updateActiveSet(1, 0, { done: true })
+    st.skipActiveExercise(0, true)
+    expect(useAppStore.getState().activeWorkout!.exercises[0].skipped).toBe(true)
+    expect(useAppStore.getState().activeWorkout!.exercises[0].sets[0].done).toBe(false)
+    const saved = st.finishWorkout('2026-09-06')!
+    expect(saved.exercises.map((e) => e.name)).toEqual([program.sessions[1].exercises[1].name])
+    expect(saved.totalSets).toBe(1)
+  })
 })

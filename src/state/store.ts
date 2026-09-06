@@ -53,6 +53,7 @@ type AppData = Pick<
   | 'workoutLog'
   | 'habitChecks'
   | 'customProgram'
+  | 'programChoice'
   | 'activeWorkout'
   | 'completedWorkouts'
   | 'exerciseMemory'
@@ -69,6 +70,7 @@ const INITIAL_DATA: AppData = {
   workoutLog: [],
   habitChecks: {},
   customProgram: null,
+  programChoice: null,
   activeWorkout: null,
   completedWorkouts: [],
   exerciseMemory: {},
@@ -90,6 +92,8 @@ interface AppState {
   workoutLog: WorkoutLogEntry[]
   habitChecks: Record<string, string[]> // habitId -> ISO dates
   customProgram: WorkoutProgram | null // null = follow the profile-generated program
+  /** Which option in Settings → Choose a program is active ('recommended', a preset id, 'imported', 'generated', 'custom'). null = not chosen yet. */
+  programChoice: string | null
   activeWorkout: ActiveWorkout | null
   completedWorkouts: CompletedWorkout[]
   /** Last logged sets per exercise name — the prefill source for every future workout. */
@@ -104,10 +108,12 @@ interface AppState {
   addWeighIn: (w: WeighIn) => void
   toggleWorkout: (date: string, sessionName: string) => void
   toggleHabit: (habitId: string, date: string) => void
-  setCustomProgram: (p: WorkoutProgram | null) => void
+  setCustomProgram: (p: WorkoutProgram | null, choice: string) => void
   startWorkout: (session: WorkoutSession) => void
   updateActiveSet: (exIdx: number, setIdx: number, patch: Partial<ActiveWorkout['exercises'][number]['sets'][number]>) => void
   addActiveSet: (exIdx: number) => void
+  /** Skip (or un-skip) an exercise in the running workout. Skipping clears its done marks. */
+  skipActiveExercise: (exIdx: number, skipped: boolean) => void
   cancelWorkout: () => void
   finishWorkout: (nowIso: string) => CompletedWorkout | null
   logActivity: (category: ActivityCategory, name: string, durationMin: number, date: string) => void
@@ -159,7 +165,7 @@ export const useAppStore = create<AppState>()(
           return { habitChecks: { ...s.habitChecks, [habitId]: next } }
         }),
 
-      setCustomProgram: (p) => set({ customProgram: p }),
+      setCustomProgram: (p, choice) => set({ customProgram: p, programChoice: choice }),
 
       startWorkout: (session) => {
         const memory = get().exerciseMemory
@@ -211,13 +217,25 @@ export const useAppStore = create<AppState>()(
           return { activeWorkout: { ...s.activeWorkout, exercises } }
         }),
 
+      skipActiveExercise: (exIdx, skipped) =>
+        set((s) => {
+          if (!s.activeWorkout) return s
+          const exercises = s.activeWorkout.exercises.map((ex, i) =>
+            i !== exIdx
+              ? ex
+              : { ...ex, skipped, sets: skipped ? ex.sets.map((st) => ({ ...st, done: false })) : ex.sets },
+          )
+          return { activeWorkout: { ...s.activeWorkout, exercises } }
+        }),
+
       cancelWorkout: () => set({ activeWorkout: null }),
 
       finishWorkout: (nowIso) => {
         const s = get()
         if (!s.activeWorkout) return null
         const done = s.activeWorkout.exercises
-          .map((ex) => ({ ...ex, sets: ex.sets.filter((st) => st.done) }))
+          .filter((ex) => !ex.skipped)
+          .map(({ skipped: _skipped, ...ex }) => ({ ...ex, sets: ex.sets.filter((st) => st.done) }))
           .filter((ex) => ex.sets.length > 0)
         const totalVolumeKg = Math.round(
           done.reduce(
@@ -350,7 +368,8 @@ export const useAppStore = create<AppState>()(
                 break // notes are journal-only
             }
           }
-          return { profile, customProgram, planHistory: [revision, ...s.planHistory].slice(0, 50) }
+          const programChoice = customProgram !== s.customProgram ? 'custom' : s.programChoice
+          return { profile, customProgram, programChoice, planHistory: [revision, ...s.planHistory].slice(0, 50) }
         }),
 
       setCoachSettings: (patch) => set((s) => ({ coachSettings: { ...s.coachSettings, ...patch } })),
@@ -400,6 +419,16 @@ export async function bindAccountStorage(storageName: string): Promise<void> {
 export function importLegacyState(state: Partial<Record<keyof AppData, unknown>>): void {
   const clean: Record<string, unknown> = {}
   for (const k of Object.keys(INITIAL_DATA) as (keyof AppData)[]) {
+    if (state[k] !== undefined) clean[k] = state[k]
+  }
+  useAppStore.setState(clean as Partial<AppState>)
+}
+
+/** Apply a cloud row to the current account (device-only secrets are kept). */
+export function importCloudState(state: Record<string, unknown>): void {
+  const clean: Record<string, unknown> = {}
+  for (const k of Object.keys(INITIAL_DATA) as (keyof AppData)[]) {
+    if (k === 'coachApiKeys') continue
     if (state[k] !== undefined) clean[k] = state[k]
   }
   useAppStore.setState(clean as Partial<AppState>)

@@ -82,3 +82,61 @@ export function estimateMinutes(session: WorkoutSession, cap: number): number {
   const sets = session.exercises.reduce((a, e) => a + e.sets, 0)
   return Math.min(cap, Math.max(20, Math.round((sets * 3 + 10) / 5) * 5))
 }
+
+/** ISO-8601 week number (1–53) of an ISO date. */
+export function isoWeek(iso: string): number {
+  const d = new Date(iso + 'T00:00:00Z')
+  const day = (d.getUTCDay() + 6) % 7
+  d.setUTCDate(d.getUTCDate() - day + 3) // Thursday of this week decides the year
+  const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4))
+  const firstDay = (firstThursday.getUTCDay() + 6) % 7
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDay + 3)
+  return 1 + Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000))
+}
+
+export interface RollingCycle {
+  days: WeekDayStatus[]
+  /** Date of the first session in the current cycle, or null when the cycle has not started. */
+  startedOn: string | null
+  doneCount: number
+}
+
+/**
+ * A rolling training week: the checklist covers one pass through the program
+ * and starts over the moment the last strength session of the pass is done,
+ * whatever the calendar says. Conditioning days tick off in order by the
+ * cardio/endurance sessions logged since the cycle began.
+ */
+export function rollingCycle(
+  program: WorkoutProgram,
+  schedule: WeeklySchedule,
+  completed: CompletedWorkout[],
+): RollingCycle {
+  const names = new Set(program.sessions.map((s) => s.name))
+  let strengthDone = new Set<string>()
+  let cycleStart = 0
+  for (let i = 0; i < completed.length; i++) {
+    const w = completed[i]
+    if (w.category !== 'strength' || !names.has(w.sessionName)) continue
+    strengthDone.add(w.sessionName)
+    if (strengthDone.size >= names.size) {
+      strengthDone = new Set()
+      cycleStart = i + 1
+    }
+  }
+  const inCycle = completed.slice(cycleStart)
+  let conditioningLeft = inCycle.filter((w) => w.category === 'cardio' || w.category === 'endurance').length
+  const days: WeekDayStatus[] = schedule.days.map((day) => {
+    if (day.kind === 'strength') return { ...day, done: strengthDone.has(day.title) }
+    if (conditioningLeft > 0) {
+      conditioningLeft--
+      return { ...day, done: true }
+    }
+    return { ...day, done: false }
+  })
+  return {
+    days,
+    startedOn: inCycle.length > 0 ? inCycle[0].date : null,
+    doneCount: days.filter((d) => d.done).length,
+  }
+}
