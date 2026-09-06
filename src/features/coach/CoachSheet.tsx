@@ -5,6 +5,7 @@ import { buildWeeklySchedule } from '../../lib/weeklySchedule'
 import { resolveCoach } from '../../lib/coach'
 import { describeChange, type ChatMessage, type PlanProposal } from '../../lib/coach/types'
 import PlanHistory from './PlanHistory'
+import { tr } from '../../i18n'
 
 function newId(): string {
   const b = new Uint8Array(6)
@@ -52,7 +53,7 @@ export default function CoachSheet({ onClose }: { onClose: () => void }) {
     try {
       reply = await coach.reply([...coachMessages, userMsg], context)
     } catch {
-      reply = { text: 'Something went wrong reaching the coach. Please try again.' }
+      reply = { text: tr('Something went wrong reaching the coach. Please try again.', 'Något gick fel när coachen skulle nås. Försök igen.') }
     }
     addCoachMessage({
       id: newId(),
@@ -70,18 +71,18 @@ export default function CoachSheet({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="coach-overlay" role="dialog" aria-label="AI training partner">
+    <div className="coach-overlay" role="dialog" aria-label={tr('AI training partner', 'AI-träningskompis')}>
       <div className="coach-sheet">
         <div className="coach-header">
           <div>
-            <strong>🤝 Training partner</strong>
+            <strong>🤝 {tr('Training partner', 'Träningskompis')}</strong>
             <div className="muted small">{coach.label}</div>
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
-            <button className="ghost icon-btn" onClick={() => setShowHistory((v) => !v)} title="Plan history">
+            <button className="ghost icon-btn" onClick={() => setShowHistory((v) => !v)} title={tr('Plan history', 'Planhistorik')}>
               🕑
             </button>
-            <button className="ghost icon-btn" onClick={onClose} aria-label="Close">
+            <button className="ghost icon-btn" onClick={onClose} aria-label={tr('Close', 'Stäng')}>
               ✕
             </button>
           </div>
@@ -96,16 +97,17 @@ export default function CoachSheet({ onClose }: { onClose: () => void }) {
             {coachMessages.length === 0 && (
               <div className="coach-intro muted small">
                 <p>
-                  Hi {profile.name}! I’m your training partner. Tell me what’s going on and I’ll suggest
-                  concrete plan changes you can apply — every change is saved to your plan history so you
-                  can undo it.
+                  {tr(
+                    `Hi ${profile.name}! I’m your training partner. Tell me what’s going on and I’ll suggest concrete plan changes you can apply — every change is saved to your plan history so you can undo it.`,
+                    `Hej ${profile.name}! Jag är din träningskompis. Berätta vad som händer så föreslår jag konkreta ändringar i planen som du kan aktivera – varje ändring sparas i din planhistorik så att du kan ångra den.`,
+                  )}
                 </p>
-                <p>Try:</p>
+                <p>{tr('Try:', 'Testa:')}</p>
                 <ul>
-                  <li>“I can only train 2 days a week”</li>
-                  <li>“Only 30 minutes per session”</li>
-                  <li>“Switch my goal to building muscle”</li>
-                  <li>“My knee hurts”</li>
+                  <li>{tr('“I can only train 2 days a week”', '”Jag kan bara träna 2 dagar i veckan”')}</li>
+                  <li>{tr('“Only 30 minutes per session”', '”Bara 30 minuter per pass”')}</li>
+                  <li>{tr('“Switch my goal to building muscle”', '”Byt mitt mål till att bygga muskler”')}</li>
+                  <li>{tr('“My knee hurts”', '”Mitt knä gör ont”')}</li>
                 </ul>
               </div>
             )}
@@ -121,16 +123,16 @@ export default function CoachSheet({ onClose }: { onClose: () => void }) {
                       ))}
                     </ul>
                     {m.proposalApplied ? (
-                      <span className="pill ok">Applied</span>
+                      <span className="pill ok">{tr('Applied', 'Aktiverad')}</span>
                     ) : m.proposalDismissed ? (
-                      <span className="pill info">Dismissed</span>
+                      <span className="pill info">{tr('Dismissed', 'Avvisad')}</span>
                     ) : (
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button className="primary small-btn" onClick={() => apply(m.id, m.proposal!)}>
-                          ✅ Apply change
+                          ✅ {tr('Apply change', 'Aktivera ändring')}
                         </button>
                         <button className="ghost small-btn" onClick={() => markProposal(m.id, 'dismissed')}>
-                          Dismiss
+                          {tr('Dismiss', 'Avvisa')}
                         </button>
                       </div>
                     )}
@@ -147,13 +149,13 @@ export default function CoachSheet({ onClose }: { onClose: () => void }) {
             <input
               type="text"
               value={input}
-              placeholder="Message your coach…"
+              placeholder={tr('Message your coach…', 'Skriv till din coach…')}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && send()}
-              aria-label="Message your coach"
+              aria-label={tr('Message your coach', 'Skriv till din coach')}
             />
             <button className="primary" disabled={!input.trim() || busy} onClick={send}>
-              Send
+              {tr('Send', 'Skicka')}
             </button>
           </div>
         )}

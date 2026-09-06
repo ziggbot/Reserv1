@@ -125,6 +125,22 @@ input, select, textarea { font-family: inherit; }
   white-space: nowrap;
 }
 
+/* ---------- Language toggle ---------- */
+.lang-toggle { display: inline-flex; border: 1.5px solid var(--ink); border-radius: var(--sketch); overflow: hidden; }
+.lang-toggle button {
+  background: none;
+  border: none;
+  padding: 3px 9px;
+  font-family: var(--hand);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.lang-toggle button.active { background: var(--ink); color: #fff; }
+.app-header .lang-toggle { margin-left: auto; }
+.app-header .lock-btn { margin-left: 8px; }
+
 /* ---------- Cards → loose notebook sections ---------- */
 .card {
   background: var(--surface);

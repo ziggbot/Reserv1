@@ -9,6 +9,7 @@ import type {
   WorkoutProgram,
   WorkoutSession,
 } from '../../lib/types'
+import { tr, L } from '../../i18n'
 
 /**
  * Training building blocks. The home screen (features/train/TrainHome) composes
@@ -18,13 +19,24 @@ import type {
 
 /* ---------------- Cardio / endurance / stretch proposals ---------------- */
 
-const SECTION_INTRO: Record<Exclude<ActivityCategory, 'strength'>, string> = {
-  cardio:
-    'Conditioning sessions that fit around your strength days. Do them, tap Log, and they land on your Progress timeline.',
-  endurance:
-    'Longer engine-building work — one of these a week compounds into a big aerobic base. Scaled to your level.',
-  stretch:
-    'Short mobility routines. The best one is the one you actually do — pick by how your body feels today.',
+function sectionIntro(category: Exclude<ActivityCategory, 'strength'>): string {
+  switch (category) {
+    case 'cardio':
+      return tr(
+        'Conditioning sessions that fit around your strength days. Do them, tap Log, and they land on your Progress timeline.',
+        'Konditionspass som passar in runt dina styrkepass. Kör dem, tryck Logga, så hamnar de på din tidslinje under Utveckling.',
+      )
+    case 'endurance':
+      return tr(
+        'Longer engine-building work — one of these a week compounds into a big aerobic base. Scaled to your level.',
+        'Längre pass som bygger motorn – ett i veckan växer med tiden till en stor aerob bas. Anpassat till din nivå.',
+      )
+    case 'stretch':
+      return tr(
+        'Short mobility routines. The best one is the one you actually do — pick by how your body feels today.',
+        'Korta rörlighetsrutiner. Den bästa är den du faktiskt gör – välj efter hur kroppen känns idag.',
+      )
+  }
 }
 
 export function ActivitySection({ category }: { category: Exclude<ActivityCategory, 'strength'> }) {
@@ -33,7 +45,7 @@ export function ActivitySection({ category }: { category: Exclude<ActivityCatego
   return (
     <>
       <p className="muted" style={{ margin: '0 4px 4px' }}>
-        {SECTION_INTRO[category]}
+        {sectionIntro(category)}
       </p>
       {proposals.map((p) => (
         <ActivityCard key={p.name} proposal={p} />
@@ -50,32 +62,32 @@ function ActivityCard({ proposal }: { proposal: ActivityProposal }) {
   return (
     <div className="card">
       <h2>
-        {proposal.name} <span className="pill info">~{proposal.durationMin} min</span>
+        {L(proposal.name)} <span className="pill info">~{proposal.durationMin} min</span>
       </h2>
-      <p className="muted">{proposal.description}</p>
+      <p className="muted">{L(proposal.description)}</p>
       <ol>
         {proposal.steps.map((s) => (
-          <li key={s}>{s}</li>
+          <li key={s}>{L(s)}</li>
         ))}
       </ol>
       {logged ? (
         <p className="banner ok" role="status">
-          ✅ Logged {minutes} min — it's on your Progress timeline.
+          ✅ {tr(`Logged ${minutes} min — it's on your Progress timeline.`, `${minutes} min loggade – de finns på din tidslinje under Utveckling.`)}
         </p>
       ) : (
         <div className="log-row">
           <div className="stepper activity-stepper">
-            <button type="button" aria-label={`Decrease minutes for ${proposal.name}`} onClick={() => setMinutes((m) => Math.max(5, m - 5))}>
+            <button type="button" aria-label={tr(`Decrease minutes for ${L(proposal.name)}`, `Minska minuter för ${L(proposal.name)}`)} onClick={() => setMinutes((m) => Math.max(5, m - 5))}>
               −
             </button>
             <input
               type="number"
               inputMode="numeric"
               value={minutes}
-              aria-label={`Minutes for ${proposal.name}`}
+              aria-label={tr(`Minutes for ${L(proposal.name)}`, `Minuter för ${L(proposal.name)}`)}
               onChange={(e) => setMinutes(Math.max(0, Number(e.target.value) || 0))}
             />
-            <button type="button" aria-label={`Increase minutes for ${proposal.name}`} onClick={() => setMinutes((m) => m + 5)}>
+            <button type="button" aria-label={tr(`Increase minutes for ${L(proposal.name)}`, `Öka minuter för ${L(proposal.name)}`)} onClick={() => setMinutes((m) => m + 5)}>
               +
             </button>
           </div>
@@ -88,7 +100,7 @@ function ActivityCard({ proposal }: { proposal: ActivityProposal }) {
               setLogged(true)
             }}
           >
-            ✓ Log session
+            ✓ {tr('Log session', 'Logga pass')}
           </button>
         </div>
       )}
@@ -123,17 +135,19 @@ export function ProgramEditor({
   return (
     <main>
       <div className="card">
-        <h1>Customize your program</h1>
+        <h1>{tr('Customize your program', 'Anpassa ditt program')}</h1>
         <p className="muted small">
-          Swap exercises (your equipment and injury flags are respected), change targets, rename
-          sessions. ⚠ marks exercises that load an area you flagged as injured.
+          {tr(
+            'Swap exercises (your equipment and injury flags are respected), change targets, rename sessions. ⚠ marks exercises that load an area you flagged as injured.',
+            'Byt övningar (din utrustning och dina skador respekteras), ändra mål, döp om pass. ⚠ markerar övningar som belastar ett område du angett som skadat.',
+          )}
         </p>
         <div style={{ display: 'flex', gap: 10 }}>
           <button className="primary" onClick={() => onSave(draft)}>
-            Save program
+            {tr('Save program', 'Spara program')}
           </button>
           <button className="ghost" onClick={onCancel}>
-            Cancel
+            {tr('Cancel', 'Avbryt')}
           </button>
         </div>
       </div>
@@ -141,7 +155,7 @@ export function ProgramEditor({
       {draft.sessions.map((s, si) => (
         <div className="card" key={si}>
           <div className="field">
-            <label>Session name</label>
+            <label>{tr('Session name', 'Passets namn')}</label>
             <input type="text" value={s.name} onChange={(e) => updateSession(si, { name: e.target.value })} />
           </div>
           {s.exercises.map((ex, ei) => (
@@ -154,11 +168,11 @@ export function ProgramEditor({
                   })
                 }
               >
-                {!library.some((l) => l.name === ex.name) && <option value={ex.name}>{ex.name}</option>}
+                {!library.some((l) => l.name === ex.name) && <option value={ex.name}>{L(ex.name)}</option>}
                 {library.map((l) => (
                   <option key={l.name} value={l.name}>
                     {l.flagged ? '⚠ ' : ''}
-                    {l.name}
+                    {L(l.name)}
                   </option>
                 ))}
               </select>
@@ -167,7 +181,7 @@ export function ProgramEditor({
                 min={1}
                 max={8}
                 value={ex.sets}
-                aria-label="Sets"
+                aria-label={tr('Sets', 'Set')}
                 onChange={(e) =>
                   updateSession(si, {
                     exercises: s.exercises.map((x, i) =>
@@ -179,7 +193,7 @@ export function ProgramEditor({
               <input
                 type="text"
                 value={ex.reps}
-                aria-label="Rep target"
+                aria-label={tr('Rep target', 'Repsmål')}
                 onChange={(e) =>
                   updateSession(si, {
                     exercises: s.exercises.map((x, i) => (i === ei ? { ...x, reps: e.target.value } : x)),
@@ -188,7 +202,7 @@ export function ProgramEditor({
               />
               <button
                 className="ghost icon-btn"
-                aria-label="Remove exercise"
+                aria-label={tr('Remove exercise', 'Ta bort övning')}
                 onClick={() =>
                   updateSession(si, { exercises: s.exercises.filter((_, i) => i !== ei) })
                 }
@@ -208,7 +222,7 @@ export function ProgramEditor({
               })
             }
           >
-            + Add exercise
+            + {tr('Add exercise', 'Lägg till övning')}
           </button>
         </div>
       ))}
@@ -239,16 +253,19 @@ export function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedW
   return (
     <main className="workout-screen">
       <div className="card plain">
-        <h1>{activeWorkout.sessionName}</h1>
+        <h1>{L(activeWorkout.sessionName)}</h1>
         <p className="muted small">
-          Weight × reps are prefilled from last time. Tap ✓ when a set is done. Beat one number today.
+          {tr(
+            'Weight × reps are prefilled from last time. Tap ✓ when a set is done. Beat one number today.',
+            'Vikt × reps är förifyllda från förra gången. Tryck ✓ när ett set är klart. Slå en siffra idag.',
+          )}
         </p>
       </div>
 
       {restEndsAt && restLeft > 0 && (
         <div className="rest-banner" role="timer">
-          ⏱ Rest: <strong>{restLeft}s</strong>
-          <button className="ghost icon-btn" onClick={() => setRestEndsAt(null)} aria-label="Dismiss rest timer">
+          ⏱ {tr('Rest', 'Vila')}: <strong>{restLeft}s</strong>
+          <button className="ghost icon-btn" onClick={() => setRestEndsAt(null)} aria-label={tr('Dismiss rest timer', 'Stäng vilotimern')}>
             ✕
           </button>
         </div>
@@ -260,29 +277,37 @@ export function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedW
             <h3>
               {ex.linkUrl ? (
                 <a href={ex.linkUrl} target="_blank" rel="noopener noreferrer">
-                  {ex.name} ↗
+                  {L(ex.name)} ↗
                 </a>
               ) : (
-                ex.name
+                L(ex.name)
               )}{' '}
-              <span className="muted small">target {ex.targetReps}</span>
+              <span className="muted small">
+                {tr('target', 'mål')} {L(ex.targetReps)}
+              </span>
             </h3>
             <button
               className="ghost small-btn"
               onClick={() => skipActiveExercise(exIdx, !ex.skipped)}
-              aria-label={ex.skipped ? `Do ${ex.name} after all` : `Skip ${ex.name}`}
+              aria-label={
+                ex.skipped
+                  ? tr(`Do ${L(ex.name)} after all`, `Kör ${L(ex.name)} ändå`)
+                  : tr(`Skip ${L(ex.name)}`, `Hoppa över ${L(ex.name)}`)
+              }
             >
-              {ex.skipped ? 'Undo skip' : 'Skip'}
+              {ex.skipped ? tr('Undo skip', 'Ångra hoppa över') : tr('Skip', 'Hoppa över')}
             </button>
           </div>
           {ex.skipped ? (
-            <p className="muted small">Skipped today. Your last numbers stay saved for next time.</p>
+            <p className="muted small">
+              {tr('Skipped today. Your last numbers stay saved for next time.', 'Överhoppad idag. Dina senaste siffror sparas till nästa gång.')}
+            </p>
           ) : (
             <>
           <div className="set-header">
-            <span>Set</span>
+            <span>{tr('Set', 'Set')}</span>
             <span>kg</span>
-            <span>reps</span>
+            <span>{tr('reps', 'reps')}</span>
             <span>✓</span>
           </div>
           {ex.sets.map((st, setIdx) => (
@@ -293,7 +318,7 @@ export function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedW
                 step={2.5}
                 decimals={1}
                 placeholder="kg"
-                ariaLabel={`${ex.name} set ${setIdx + 1} weight in kg`}
+                ariaLabel={tr(`${L(ex.name)} set ${setIdx + 1} weight in kg`, `${L(ex.name)} set ${setIdx + 1} vikt i kg`)}
                 onChange={(v) => updateActiveSet(exIdx, setIdx, { weightKg: v })}
               />
               <Stepper
@@ -301,12 +326,16 @@ export function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedW
                 step={1}
                 decimals={0}
                 placeholder="reps"
-                ariaLabel={`${ex.name} set ${setIdx + 1} reps`}
+                ariaLabel={tr(`${L(ex.name)} set ${setIdx + 1} reps`, `${L(ex.name)} set ${setIdx + 1} reps`)}
                 onChange={(v) => updateActiveSet(exIdx, setIdx, { reps: v })}
               />
               <button
                 className={`set-check ${st.done ? 'checked' : ''}`}
-                aria-label={`Mark set ${setIdx + 1} ${st.done ? 'not done' : 'done'}`}
+                aria-label={
+                  st.done
+                    ? tr(`Mark set ${setIdx + 1} not done`, `Markera set ${setIdx + 1} som inte klart`)
+                    : tr(`Mark set ${setIdx + 1} done`, `Markera set ${setIdx + 1} som klart`)
+                }
                 onClick={() => {
                   const nowDone = !st.done
                   updateActiveSet(exIdx, setIdx, { done: nowDone })
@@ -318,7 +347,7 @@ export function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedW
             </div>
           ))}
           <button className="ghost small-btn" onClick={() => addActiveSet(exIdx)}>
-            + Add set
+            + {tr('Add set', 'Lägg till set')}
           </button>
             </>
           )}
@@ -327,15 +356,15 @@ export function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedW
 
       <div className="workout-footer">
         <span className="elapsed">
-          ⏱ {elapsedMin}:{String(elapsedSec).padStart(2, '0')} · {doneSets} sets
+          ⏱ {elapsedMin}:{String(elapsedSec).padStart(2, '0')} · {doneSets} {tr('sets', 'set')}
         </span>
         {!confirmCancel ? (
           <button className="ghost" onClick={() => setConfirmCancel(true)}>
-            Discard
+            {tr('Discard', 'Släng')}
           </button>
         ) : (
           <button className="ghost" style={{ color: 'var(--danger)' }} onClick={cancelWorkout}>
-            Really discard?
+            {tr('Really discard?', 'Släng passet?')}
           </button>
         )}
         <button
@@ -346,7 +375,7 @@ export function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedW
             if (w) onFinished(w)
           }}
         >
-          Finish
+          {tr('Finish', 'Avsluta')}
         </button>
       </div>
     </main>
@@ -377,7 +406,7 @@ function Stepper({
     <div className="stepper">
       <button
         type="button"
-        aria-label={`Decrease ${ariaLabel}`}
+        aria-label={tr(`Decrease ${ariaLabel}`, `Minska ${ariaLabel}`)}
         onClick={() => onChange(round(Math.max(0, (value ?? 0) - step)))}
       >
         −
@@ -392,7 +421,7 @@ function Stepper({
         aria-label={ariaLabel}
         onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
       />
-      <button type="button" aria-label={`Increase ${ariaLabel}`} onClick={() => onChange(round((value ?? 0) + step))}>
+      <button type="button" aria-label={tr(`Increase ${ariaLabel}`, `Öka ${ariaLabel}`)} onClick={() => onChange(round((value ?? 0) + step))}>
         +
       </button>
     </div>
@@ -425,22 +454,22 @@ export function WorkoutSummary({
   return (
     <main>
       <div className="card">
-        <h1>💪 Workout saved</h1>
+        <h1>💪 {tr('Workout saved', 'Passet sparat')}</h1>
         <div className="stat-row">
           <div className="stat">
             <div className="value">{workout.durationMin}</div>
-            <div className="label">minutes</div>
+            <div className="label">{tr('minutes', 'minuter')}</div>
           </div>
           <div className="stat">
             <div className="value">{workout.totalSets}</div>
-            <div className="label">sets</div>
+            <div className="label">{tr('sets', 'set')}</div>
           </div>
           <div className="stat">
             <div className="value">{workout.totalVolumeKg.toLocaleString()}</div>
-            <div className="label">kg volume</div>
+            <div className="label">{tr('kg volume', 'kg volym')}</div>
           </div>
         </div>
-        <h2>Best set per exercise</h2>
+        <h2>{tr('Best set per exercise', 'Bästa set per övning')}</h2>
         <ul>
           {workout.exercises.map((ex) => {
             const best = ex.sets.reduce(
@@ -450,17 +479,17 @@ export function WorkoutSummary({
             const isPr = (best.weightKg ?? 0) > previousBest(ex.name) && (best.weightKg ?? 0) > 0
             return (
               <li key={ex.name}>
-                {ex.name}: <strong>{best.weightKg ?? 0} kg × {best.reps ?? 0}</strong>{' '}
+                {L(ex.name)}: <strong>{best.weightKg ?? 0} kg × {best.reps ?? 0}</strong>{' '}
                 {isPr && <span className="pill ok">PR</span>}
               </li>
             )
           })}
         </ul>
         <p className="muted small">
-          Volume, strength trend and your weight curve live under Progress.
+          {tr('Volume, strength trend and your weight curve live under Progress.', 'Volym, styrketrend och din viktkurva finns under Utveckling.')}
         </p>
         <button className="primary" onClick={onClose}>
-          Done
+          {tr('Done', 'Klar')}
         </button>
       </div>
     </main>

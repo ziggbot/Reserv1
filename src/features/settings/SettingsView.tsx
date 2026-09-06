@@ -2,11 +2,14 @@ import { useState } from 'react'
 import { exportableState, useAppStore } from '../../state/store'
 import { getSession } from '../../state/session'
 import { eraseAccount } from '../../state/accounts'
+import { tr, useLocale } from '../../i18n'
+import LanguageToggle from '../../i18n/LanguageToggle'
 import TrainingProgramCard from './TrainingProgramCard'
 import CoachSettingsCard from './CoachSettingsCard'
 import CloudSyncCard from './CloudSyncCard'
 
 export default function SettingsView({ onLock }: { onLock: () => void }) {
+  useLocale()
   const { profile, resetAll, weighIns } = useAppStore()
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmErase, setConfirmErase] = useState(false)
@@ -14,6 +17,7 @@ export default function SettingsView({ onLock }: { onLock: () => void }) {
   if (!profile) return null
 
   const session = getSession()
+  const displayName = session?.displayName ?? tr('Me', 'Jag')
 
   function exportData() {
     const payload = {
@@ -42,8 +46,24 @@ export default function SettingsView({ onLock }: { onLock: () => void }) {
   return (
     <main>
       <div className="home-greeting">
-        <h1>Settings</h1>
-        <div className="date">Program, cloud sync, coach, and your data. Weight and goal live under Progress.</div>
+        <h1>{tr('Settings', 'Inställningar')}</h1>
+        <div className="date">
+          {tr(
+            'Program, cloud sync, coach, and your data. Weight and goal live under Progress.',
+            'Program, molnsynk, coach och dina data. Vikt och mål finns under Framsteg.',
+          )}
+        </div>
+      </div>
+
+      <div className="card">
+        <h2>{tr('🌐 Language', '🌐 Språk')}</h2>
+        <p className="muted small">
+          {tr(
+            'Swedish or English for the whole app. Your own program names are shown as you wrote them.',
+            'Svenska eller engelska i hela appen. Dina egna programnamn visas som du skrev dem.',
+          )}
+        </p>
+        <LanguageToggle />
       </div>
 
       <TrainingProgramCard />
@@ -51,61 +71,79 @@ export default function SettingsView({ onLock }: { onLock: () => void }) {
       <CloudSyncCard />
 
       <div className="card">
-        <h2>🔐 Your data & privacy</h2>
+        <h2>{tr('🔐 Your data & privacy', '🔐 Dina data & integritet')}</h2>
         <p className="muted small">
-          {weighIns.length} weigh-ins stored. Your data lives only on this device, encrypted with your
-          passcode. It is never sent to any server — you are the data controller.
+          {tr(
+            `${weighIns.length} weigh-ins stored. Your data lives only on this device, encrypted with your passcode. It is never sent to any server — you are the data controller.`,
+            `${weighIns.length} invägningar sparade. Dina data finns bara på den här enheten, krypterade med din kod. De skickas aldrig till någon server — du är personuppgiftsansvarig.`,
+          )}
         </p>
 
-        <h3>Export my data</h3>
+        <h3>{tr('Export my data', 'Exportera mina data')}</h3>
         <p className="muted small">
-          Download everything in a portable JSON file (GDPR Article 20 — data portability).
+          {tr(
+            'Download everything in a portable JSON file (GDPR Article 20 — data portability).',
+            'Ladda ner allt som en portabel JSON-fil (GDPR artikel 20 — dataportabilitet).',
+          )}
         </p>
         <button className="ghost" onClick={exportData}>
-          ⬇ Export my data (JSON)
+          {tr('⬇ Export my data (JSON)', '⬇ Exportera mina data (JSON)')}
         </button>
 
-        <h3 style={{ marginTop: 16 }}>Start over</h3>
-        <p className="muted small">Redo the interview from scratch, keeping this profile.</p>
+        <h3 style={{ marginTop: 16 }}>{tr('Start over', 'Börja om')}</h3>
+        <p className="muted small">
+          {tr('Redo the interview from scratch, keeping this profile.', 'Gör om intervjun från början men behåll den här profilen.')}
+        </p>
         {!confirmReset ? (
           <button className="ghost" onClick={() => setConfirmReset(true)}>
-            Reset my plan…
+            {tr('Reset my plan…', 'Återställ min plan…')}
           </button>
         ) : (
           <div>
-            <div className="banner danger">This deletes your profile, logs and streaks in this profile. Sure?</div>
+            <div className="banner danger">
+              {tr(
+                'This deletes your profile, logs and streaks in this profile. Sure?',
+                'Det här raderar din profil, dina loggar och dina dagar i rad i den här profilen. Säker?',
+              )}
+            </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="ghost" onClick={() => setConfirmReset(false)}>
-                Keep my data
+                {tr('Keep my data', 'Behåll mina data')}
               </button>
               <button className="primary" style={{ background: 'var(--danger)' }} onClick={resetAll}>
-                Yes, reset
+                {tr('Yes, reset', 'Ja, återställ')}
               </button>
             </div>
           </div>
         )}
 
-        <h3 style={{ marginTop: 16 }}>Erase my account</h3>
+        <h3 style={{ marginTop: 16 }}>{tr('Erase my account', 'Radera mitt konto')}</h3>
         <p className="muted small">
-          Permanently delete this profile and all its encrypted data from this device (GDPR Article 17 —
-          right to erasure). This cannot be undone.
+          {tr(
+            'Permanently delete this profile and all its encrypted data from this device (GDPR Article 17 — right to erasure). This cannot be undone.',
+            'Ta bort den här profilen och alla dess krypterade data från enheten permanent (GDPR artikel 17 — rätten till radering). Det går inte att ångra.',
+          )}
         </p>
         {!confirmErase ? (
           <button className="ghost" style={{ borderColor: 'var(--danger)', color: 'var(--danger)' }} onClick={() => setConfirmErase(true)}>
-            Erase account & all data…
+            {tr('Erase account & all data…', 'Radera konto & alla data…')}
           </button>
         ) : (
           <div>
             <div className="banner danger">
-              This erases <strong>{session?.displayName ?? 'this profile'}</strong> and every trace of its
-              data from this device. There is no recovery. Continue?
+              {tr('This erases ', 'Det här raderar ')}
+              <strong>{session?.displayName ?? tr('this profile', 'den här profilen')}</strong>
+              {tr(
+                ' and every trace of its data from this device. There is no recovery. Continue?',
+                ' och varje spår av dess data från den här enheten. Det finns ingen återställning. Fortsätta?',
+              )}
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="ghost" onClick={() => setConfirmErase(false)}>
-                Cancel
+                {tr('Cancel', 'Avbryt')}
               </button>
               <button className="primary" style={{ background: 'var(--danger)' }} onClick={eraseEverything}>
-                Erase everything
+                {tr('Erase everything', 'Radera allt')}
               </button>
             </div>
           </div>
@@ -115,13 +153,17 @@ export default function SettingsView({ onLock }: { onLock: () => void }) {
       <CoachSettingsCard />
 
       <div className="card">
-        <h2>👤 Profile & session</h2>
+        <h2>{tr('👤 Profile & session', '👤 Profil & session')}</h2>
         <p className="muted small">
-          Signed in as <strong>{session?.displayName ?? 'Me'}</strong>. Lock to switch to another profile;
-          your data stays encrypted until you unlock again.
+          {tr('Signed in as ', 'Inloggad som ')}
+          <strong>{displayName}</strong>
+          {tr(
+            '. Lock to switch to another profile; your data stays encrypted until you unlock again.',
+            '. Lås för att byta till en annan profil; dina data förblir krypterade tills du låser upp igen.',
+          )}
         </p>
         <button className="ghost" onClick={onLock}>
-          🔒 Lock & switch profile
+          {tr('🔒 Lock & switch profile', '🔒 Lås & byt profil')}
         </button>
       </div>
     </main>

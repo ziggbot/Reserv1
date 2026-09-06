@@ -1,4 +1,5 @@
 import type { ActivityLevel, Goal, MacroTargets, NutritionPlan, Profile, Sex } from './types'
+import { tr } from '../i18n'
 
 /**
  * Mifflin–St Jeor resting metabolic rate (kcal/day).
@@ -91,18 +92,36 @@ export function buildNutritionPlan(profile: Profile): NutritionPlan {
   const maintenance = tdee(profile)
   const targets = macroTargets(profile)
   const perKg = proteinPerKg(profile.goal, profile.bodyFatPct)
+  const perMeal = Math.round(targets.proteinG / profile.mealsPerDay)
   const notes: string[] = [
-    `Protein at ${perKg} g/kg — spread over ${profile.mealsPerDay} meals (~${Math.round(
-      targets.proteinG / profile.mealsPerDay,
-    )} g per meal) to maximize muscle protein synthesis.`,
-    'These are starting targets, not rules carved in stone: weigh in, watch the weekly trend, and adjust in small steps.',
-    '80/20 principle — build most meals from whole foods you actually like; nothing is forbidden.',
+    tr(
+      `Protein at ${perKg} g/kg — spread over ${profile.mealsPerDay} meals (~${perMeal} g per meal) to maximize muscle protein synthesis.`,
+      `Protein ${perKg} g per kg kroppsvikt — fördelat på ${profile.mealsPerDay} måltider (~${perMeal} g per måltid) för att maximera muskelproteinsyntesen.`,
+    ),
+    tr(
+      'These are starting targets, not rules carved in stone: weigh in, watch the weekly trend, and adjust in small steps.',
+      'Det här är startmål, inte regler huggna i sten: väg dig, följ veckotrenden och justera i små steg.',
+    ),
+    tr(
+      '80/20 principle — build most meals from whole foods you actually like; nothing is forbidden.',
+      '80/20-principen — bygg de flesta måltider på riktig mat du faktiskt gillar; inget är förbjudet.',
+    ),
   ]
   if (profile.goal === 'fat_loss') {
-    notes.push('Keep the deficit moderate. Crash diets lose muscle and rebound; this plan is built to be the last diet you need.')
+    notes.push(
+      tr(
+        'Keep the deficit moderate. Crash diets lose muscle and rebound; this plan is built to be the last diet you need.',
+        'Håll kaloriunderskottet måttligt. Crashdieter kostar muskler och slår tillbaka; den här planen är byggd för att bli den sista dieten du behöver.',
+      ),
+    )
   }
   if (profile.goal === 'muscle_gain') {
-    notes.push('Expect to gain slowly. If the scale jumps fast, most of it is not muscle — hold the surplus small.')
+    notes.push(
+      tr(
+        'Expect to gain slowly. If the scale jumps fast, most of it is not muscle — hold the surplus small.',
+        'Räkna med att gå upp långsamt. Om vågen rusar är det mesta inte muskler — håll överskottet litet.',
+      ),
+    )
   }
   return {
     maintenanceCalories: maintenance,

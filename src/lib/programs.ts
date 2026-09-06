@@ -6,6 +6,7 @@ import type {
   WorkoutProgram,
   WorkoutSession,
 } from './types'
+import { tr } from '../i18n'
 
 /**
  * Movement-pattern based program builder.
@@ -220,7 +221,11 @@ export interface ProgramPreset {
   overrides: Partial<Pick<Profile, 'daysPerWeek' | 'equipment' | 'minutesPerSession'>>
 }
 
-/** Ready-made templates; each is generated through the same injury/equipment-aware builder. */
+/**
+ * Ready-made templates; each is generated through the same injury/equipment-aware builder.
+ * `name`/`description` are the canonical English texts — display them through
+ * `presetLabel()` / `presetDescription()` so the active language is applied.
+ */
 export const PROGRAM_PRESETS: ProgramPreset[] = [
   { id: 'recommended', name: 'Recommended for you', description: 'Built from your interview answers', overrides: {} },
   { id: 'fullbody3', name: 'Full Body ×3', description: 'The classic 3-day plan — best value per gym hour', overrides: { daysPerWeek: 3 } },
@@ -230,26 +235,68 @@ export const PROGRAM_PRESETS: ProgramPreset[] = [
   { id: 'travel', name: 'Bodyweight Travel', description: 'No equipment — hotel room friendly', overrides: { equipment: 'none' } },
 ]
 
+/** Swedish display texts per preset id (the English canonical text lives on the preset itself). */
+const PRESET_SV: Record<string, { name: string; description: string }> = {
+  recommended: { name: 'Rekommenderat för dig', description: 'Byggt från dina intervjusvar' },
+  fullbody3: { name: 'Helkropp ×3', description: 'Det klassiska 3-dagarsupplägget — mest värde per gymtimme' },
+  upperlower4: { name: 'Över / Under ×4', description: '4 dagar, mer volym per muskel' },
+  ppl6: { name: 'Push / Pull / Ben ×6', description: '6 dagar för erfarna lyftare' },
+  minimal30: { name: '30-min Express', description: 'Korta pass för fullpackade veckor' },
+  travel: { name: 'Kroppsvikt på resan', description: 'Ingen utrustning — funkar på hotellrummet' },
+}
+
+/** Display name of a preset in the active language. */
+export function presetLabel(preset: ProgramPreset): string {
+  return tr(preset.name, PRESET_SV[preset.id]?.name ?? preset.name)
+}
+
+/** Display description of a preset in the active language. */
+export function presetDescription(preset: ProgramPreset): string {
+  return tr(preset.description, PRESET_SV[preset.id]?.description ?? preset.description)
+}
+
 export function buildPresetProgram(profile: Profile, presetId: string): WorkoutProgram {
   const preset = PROGRAM_PRESETS.find((p) => p.id === presetId) ?? PROGRAM_PRESETS[0]
   return buildProgram({ ...profile, ...preset.overrides })
+}
+
+const INJURY_SV: Record<Injury, string> = {
+  knee: 'knä',
+  shoulder: 'axel',
+  lower_back: 'ländrygg',
+  hip: 'höft',
+  wrist_elbow: 'handled/armbåge',
+  ankle: 'fotled',
 }
 
 /** Health-screen cautions shown with any strength program. */
 export function buildCautions(profile: Profile): string[] {
   const cautions: string[] = []
   if (profile.injuries.length > 0) {
+    const listEn = profile.injuries.map((i) => i.replace('_', ' ')).join(', ')
+    const listSv = profile.injuries.map((i) => INJURY_SV[i] ?? i).join(', ')
     cautions.push(
-      `You reported ${profile.injuries.map((i) => i.replace('_', ' ')).join(', ')} issue(s). Work in a pain-free range; pain above 3/10 that lingers next day means back off and see a physio.`,
+      tr(
+        `You reported ${listEn} issue(s). Work in a pain-free range; pain above 3/10 that lingers next day means back off and see a physio.`,
+        `Du har angett besvär med ${listSv}. Träna i smärtfritt rörelseomfång; smärta över 3/10 som sitter kvar nästa dag betyder att du ska backa och uppsöka fysioterapeut.`,
+      ),
     )
   }
   if (profile.medicalConditions.length > 0) {
     cautions.push(
-      'You flagged a medical condition — get clearance from your physician before starting, and stop any session that causes chest pain, dizziness or unusual shortness of breath.',
+      tr(
+        'You flagged a medical condition — get clearance from your physician before starting, and stop any session that causes chest pain, dizziness or unusual shortness of breath.',
+        'Du har flaggat ett medicinskt tillstånd — få klartecken från din läkare innan du börjar, och avbryt varje pass som ger bröstsmärta, yrsel eller ovanlig andfåddhet.',
+      ),
     )
   }
   if (profile.medicalConditions.includes('hypertension')) {
-    cautions.push('With hypertension: avoid breath-holding (Valsalva) on heavy lifts — keep breathing, keep loads moderate, rest fully between sets.')
+    cautions.push(
+      tr(
+        'With hypertension: avoid breath-holding (Valsalva) on heavy lifts — keep breathing, keep loads moderate, rest fully between sets.',
+        'Vid högt blodtryck: undvik att hålla andan (Valsalva) i tunga lyft — fortsätt andas, håll belastningen måttlig och vila fullt ut mellan seten.',
+      ),
+    )
   }
   return cautions
 }
@@ -267,15 +314,27 @@ export function buildCardio(profile: Profile) {
   const hiitSessionsPerWeek = wantsHiit && hiitSafe(profile) ? 1 : 0
   return {
     sessionsPerWeek: zone2Sessions,
-    description: `${zone2Sessions}× 20–30 min zone 2 (you can hold a conversation) — walk, cycle, row or swim. Target 150+ min of total weekly moderate activity (WHO guideline).`,
+    description: tr(
+      `${zone2Sessions}× 20–30 min zone 2 (you can hold a conversation) — walk, cycle, row or swim. Target 150+ min of total weekly moderate activity (WHO guideline).`,
+      `${zone2Sessions}× 20–30 min zon 2 (du kan hålla en konversation) — promenad, cykel, rodd eller simning. Sikta på 150+ min måttlig aktivitet per vecka totalt (WHO:s riktlinje).`,
+    ),
     stepsTarget,
     hiitSessionsPerWeek,
     hiitDescription:
       hiitSessionsPerWeek > 0
-        ? '1× 15–20 min HIIT: 6–8 rounds of 30 s hard / 90 s easy (bike, rower, hill walks). Time-efficient VO₂max work — but never on legs day, and only when sleep allows.'
+        ? tr(
+            '1× 15–20 min HIIT: 6–8 rounds of 30 s hard / 90 s easy (bike, rower, hill walks). Time-efficient VO₂max work — but never on legs day, and only when sleep allows.',
+            '1× 15–20 min HIIT: 6–8 rundor med 30 s hårt / 90 s lugnt (cykel, roddmaskin, backpromenader). Tidseffektiv VO₂max-träning — men aldrig på bendagen, och bara när sömnen tillåter.',
+          )
         : profile.medicalConditions.length > 0 && (profile.goal === 'fat_loss' || profile.goal === 'general_fitness')
-          ? 'HIIT is skipped due to your health screen — extra zone 2 delivers the same fat-loss result with less cardiovascular strain. Revisit with your physician’s clearance.'
-          : 'No HIIT prescribed for this goal — steps and zone 2 cover your conditioning; strength training stays the priority.',
+          ? tr(
+              'HIIT is skipped due to your health screen — extra zone 2 delivers the same fat-loss result with less cardiovascular strain. Revisit with your physician’s clearance.',
+              'HIIT hoppas över på grund av din hälsoscreening — extra zon 2 ger samma resultat för fettförbränningen med mindre belastning på hjärta och kärl. Ta upp det igen när din läkare gett klartecken.',
+            )
+          : tr(
+              'No HIIT prescribed for this goal — steps and zone 2 cover your conditioning; strength training stays the priority.',
+              'Ingen HIIT ordinerad för det här målet — steg och zon 2 täcker din kondition; styrketräningen förblir prioriteten.',
+            ),
   }
 }
 
@@ -294,9 +353,18 @@ export function buildProgram(profile: Profile): WorkoutProgram {
   const cardio = buildCardio(profile)
 
   const progressionRules = [
-    'Double progression: when you hit the top of the rep range on all sets with good form, add weight (2.5–5%) or 1 rep next time.',
-    'Log every session. Progressive overload — doing slightly more over time — is the entire engine of results.',
-    'A grinding, form-breaking rep counts as a failed rep. Stay 1–3 reps shy of failure on most sets.',
+    tr(
+      'Double progression: when you hit the top of the rep range on all sets with good form, add weight (2.5–5%) or 1 rep next time.',
+      'Dubbel progression: när du når toppen av repsintervallet på alla set med bra teknik, lägg på vikt (2,5–5 %) eller 1 rep nästa gång.',
+    ),
+    tr(
+      'Log every session. Progressive overload — doing slightly more over time — is the entire engine of results.',
+      'Logga varje pass. Progressiv överbelastning — att göra lite mer över tid — är hela motorn bakom resultaten.',
+    ),
+    tr(
+      'A grinding, form-breaking rep counts as a failed rep. Stay 1–3 reps shy of failure on most sets.',
+      'En rep som maler och där tekniken brister räknas som misslyckad. Håll dig 1–3 reps från failure på de flesta set.',
+    ),
   ]
 
   const cautions = buildCautions(profile)
@@ -306,8 +374,10 @@ export function buildProgram(profile: Profile): WorkoutProgram {
     sessions,
     cardio,
     progressionRules,
-    deloadRule:
+    deloadRule: tr(
       'Every 5th week, or whenever sleep/joints/motivation tank: cut sets in half and keep weights at ~70% for one week. Deloads are when adaptations consolidate.',
+      'Var 5:e vecka, eller när sömn/leder/motivation dyker: halvera antalet set och håll vikterna på ~70 % i en vecka. Deload-veckor är när anpassningarna sätter sig.',
+    ),
     cautions,
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useAppStore } from './state/store'
 import IntakeWizard from './features/intake/IntakeWizard'
 import Blueprint from './features/blueprint/Blueprint'
@@ -12,33 +12,64 @@ import AccountGate from './features/auth/AccountGate'
 import CoachFab from './features/coach/CoachFab'
 import { clearSession, getSession } from './state/session'
 import { stopSync } from './state/cloudSync'
+import { tr, useLocale } from './i18n'
+import LanguageToggle from './i18n/LanguageToggle'
 
 export type Tab = 'train' | 'progress' | 'more' | 'blueprint' | 'nutrition' | 'longevity' | 'habits' | 'settings'
 
 /** The three things in the bottom bar. Training sits in the middle. */
-const NAV: { id: Tab; label: string; icon: string }[] = [
-  { id: 'progress', label: 'Progress', icon: '📈' },
-  { id: 'train', label: 'Train', icon: '🏋️' },
-  { id: 'more', label: 'More', icon: '☰' },
-]
+function nav(): { id: Tab; label: string; icon: string }[] {
+  return [
+    { id: 'progress', label: tr('Progress', 'Utveckling'), icon: '📈' },
+    { id: 'train', label: tr('Train', 'Träna'), icon: '🏋️' },
+    { id: 'more', label: tr('More', 'Mer'), icon: '☰' },
+  ]
+}
 
 /** Everything that is not training lives one tap away, behind More. */
-const SECONDARY: { id: Tab; label: string; icon: string; desc: string }[] = [
-  { id: 'blueprint', label: 'Plan & roadmap', icon: '📋', desc: 'Your marching orders and the realistic path to your goal' },
-  { id: 'nutrition', label: 'Nutrition', icon: '🍽️', desc: 'Calories, protein, meal ideas, supplements' },
-  { id: 'habits', label: 'Habits', icon: '✅', desc: 'Anchored habits and streaks' },
-  { id: 'longevity', label: 'Longevity', icon: '🧬', desc: 'What the research says about living longer' },
-  { id: 'settings', label: 'Settings', icon: '⚙️', desc: 'Program, training days, coach, data & privacy' },
-]
+function secondary(): { id: Tab; label: string; icon: string; desc: string }[] {
+  return [
+    {
+      id: 'blueprint',
+      label: tr('Plan & roadmap', 'Plan & vägkarta'),
+      icon: '📋',
+      desc: tr('Your marching orders and the realistic path to your goal', 'Dina marschorder och den realistiska vägen till ditt mål'),
+    },
+    {
+      id: 'nutrition',
+      label: tr('Nutrition', 'Kost'),
+      icon: '🍽️',
+      desc: tr('Calories, protein, meal ideas, supplements', 'Kalorier, protein, måltidsidéer, kosttillskott'),
+    },
+    { id: 'habits', label: tr('Habits', 'Vanor'), icon: '✅', desc: tr('Anchored habits and streaks', 'Förankrade vanor och streaks') },
+    {
+      id: 'longevity',
+      label: tr('Longevity', 'Långt liv'),
+      icon: '🧬',
+      desc: tr('What the research says about living longer', 'Vad forskningen säger om att leva längre'),
+    },
+    {
+      id: 'settings',
+      label: tr('Settings', 'Inställningar'),
+      icon: '⚙️',
+      desc: tr('Program, training days, coach, data & privacy', 'Program, träningsdagar, coach, data & integritet'),
+    },
+  ]
+}
 
 export default function App() {
   const profile = useAppStore((s) => s.profile)
   const activeWorkout = useAppStore((s) => s.activeWorkout)
   const [tab, setTab] = useState<Tab>('train')
   const [unlocked, setUnlocked] = useState(() => getSession() !== null)
+  const locale = useLocale()
 
   if (!unlocked) {
-    return <AccountGate onReady={() => setUnlocked(true)} />
+    return (
+      <Fragment key={locale}>
+        <AccountGate onReady={() => setUnlocked(true)} />
+      </Fragment>
+    )
   }
 
   const lock = () => {
@@ -50,11 +81,11 @@ export default function App() {
 
   if (!profile) {
     return (
-      <>
+      <Fragment key={locale}>
         <Header onLock={lock} />
         <IntakeWizard />
         <Disclaimer />
-      </>
+      </Fragment>
     )
   }
 
@@ -62,11 +93,11 @@ export default function App() {
   const navTab: Tab = tab === 'train' || tab === 'progress' ? tab : 'more'
 
   return (
-    <>
+    <Fragment key={locale}>
       <Header onLock={lock} />
       {activeWorkout && tab !== 'train' && (
         <div className="banner warn" role="status">
-          🏋️ Workout in progress —{' '}
+          🏋️ {tr('Workout in progress', 'Pass pågår')} —{' '}
           <a
             href="#"
             onClick={(e) => {
@@ -74,13 +105,13 @@ export default function App() {
               setTab('train')
             }}
           >
-            back to it
+            {tr('back to it', 'tillbaka till passet')}
           </a>
         </div>
       )}
       {tab !== 'train' && tab !== 'progress' && tab !== 'more' && (
         <button className="back-link" onClick={() => setTab('more')}>
-          ← More
+          ← {tr('More', 'Mer')}
         </button>
       )}
       {tab === 'train' && <TrainHome onNavigate={setTab} />}
@@ -94,8 +125,8 @@ export default function App() {
       <Disclaimer />
       {!workoutTakeover && <CoachFab />}
       {!workoutTakeover && (
-        <nav className="tabbar" aria-label="Main navigation">
-          {NAV.map((t) => (
+        <nav className="tabbar" aria-label={tr('Main navigation', 'Huvudnavigering')}>
+          {nav().map((t) => (
             <button
               key={t.id}
               className={`${navTab === t.id ? 'active' : ''} ${t.id === 'train' ? 'center' : ''}`}
@@ -110,7 +141,7 @@ export default function App() {
           ))}
         </nav>
       )}
-    </>
+    </Fragment>
   )
 }
 
@@ -118,11 +149,11 @@ function MorePage({ onNavigate }: { onNavigate: (t: Tab) => void }) {
   return (
     <main>
       <div className="home-greeting">
-        <h1>Everything else</h1>
-        <div className="date">The plan behind the training. Peek when you need it.</div>
+        <h1>{tr('Everything else', 'Allt annat')}</h1>
+        <div className="date">{tr('The plan behind the training. Peek when you need it.', 'Planen bakom träningen. Kika när du behöver.')}</div>
       </div>
       <ul className="more-list">
-        {SECONDARY.map((s) => (
+        {secondary().map((s) => (
           <li key={s.id}>
             <button className="more-item" onClick={() => onNavigate(s.id)}>
               <span className="icon" aria-hidden>
@@ -159,8 +190,9 @@ function Header({ onLock }: { onLock?: () => void }) {
       <div>
         <div className="title">FitBlueprint</div>
       </div>
+      <LanguageToggle />
       {onLock && session && (
-        <button className="lock-btn" onClick={onLock} title="Lock & switch profile">
+        <button className="lock-btn" onClick={onLock} title={tr('Lock & switch profile', 'Lås & byt profil')}>
           <span aria-hidden>🔒</span> {session.displayName}
         </button>
       )}
@@ -171,10 +203,10 @@ function Header({ onLock }: { onLock?: () => void }) {
 function Disclaimer() {
   return (
     <p className="footer-disclaimer">
-      FitBlueprint provides general fitness and nutrition education based on published research. It is
-      not medical advice and does not replace a physician, registered dietitian or physiotherapist —
-      especially if you have a medical condition, an injury, or are pregnant. Stop and seek care for
-      chest pain, dizziness or acute pain. All data stays on this device.
+      {tr(
+        'FitBlueprint provides general fitness and nutrition education based on published research. It is not medical advice and does not replace a physician, registered dietitian or physiotherapist — especially if you have a medical condition, an injury, or are pregnant. Stop and seek care for chest pain, dizziness or acute pain. All data stays on this device.',
+        'FitBlueprint ger allmän utbildning om träning och kost baserad på publicerad forskning. Det är inte medicinsk rådgivning och ersätter inte läkare, legitimerad dietist eller fysioterapeut – särskilt inte om du har en sjukdom, en skada eller är gravid. Avbryt och sök vård vid bröstsmärta, yrsel eller akut smärta. All data stannar på den här enheten.',
+      )}
     </p>
   )
 }

@@ -1,7 +1,7 @@
 {
-  "name": "FitBlueprint — Evidence-Based Personal Trainer",
+  "name": "FitBlueprint — din evidensbaserade PT",
   "short_name": "FitBlueprint",
-  "description": "Personalized fitness blueprint, transformation roadmap, nutrition coaching, fat-loss strategy and habit building — grounded in current health research.",
+  "description": "Träningsschema, kost, framsteg och vanor – byggt på aktuell forskning. Svenska och engelska.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",

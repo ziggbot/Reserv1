@@ -7,15 +7,18 @@ import { buildPresetProgram } from '../../lib/programs'
 import { ActiveWorkoutScreen, ActivitySection, WorkoutSummary } from '../action/ActionView'
 import type { ActivityCategory, CompletedWorkout, Profile, WorkoutProgram, WorkoutSession } from '../../lib/types'
 import type { Tab } from '../../App'
+import { tr, L, fmtDate } from '../../i18n'
 
 type Other = Exclude<ActivityCategory, 'strength'> | 'bonus'
 
-const OTHER: { id: Other; icon: string; label: string }[] = [
-  { id: 'cardio', icon: '🫀', label: 'Cardio' },
-  { id: 'endurance', icon: '🏃', label: 'Endurance' },
-  { id: 'stretch', icon: '🧘', label: 'Stretch' },
-  { id: 'bonus', icon: '💪', label: 'Bonus strength' },
-]
+function otherChips(): { id: Other; icon: string; label: string }[] {
+  return [
+    { id: 'cardio', icon: '🫀', label: tr('Cardio', 'Kondition') },
+    { id: 'endurance', icon: '🏃', label: tr('Endurance', 'Uthållighet') },
+    { id: 'stretch', icon: '🧘', label: tr('Stretch', 'Rörlighet') },
+    { id: 'bonus', icon: '💪', label: tr('Bonus strength', 'Bonusstyrka') },
+  ]
+}
 
 export const BONUS_SESSION_NAME = 'Bonus full body'
 
@@ -57,27 +60,31 @@ export default function TrainHome({ onNavigate }: { onNavigate: (t: Tab) => void
   return (
     <main>
       <div className="home-greeting">
-        <h1>Hi {firstName}.</h1>
+        <h1>{tr(`Hi ${firstName}.`, `Hej ${firstName}.`)}</h1>
         <div className="date">
-          {new Date(today + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
+          {fmtDate(today, { weekday: 'long', day: 'numeric', month: 'long' })}
           {' · '}
-          {doneCount}/{week.length} sessions done this week
+          {tr(`${doneCount}/${week.length} sessions done this week`, `${doneCount}/${week.length} pass klara den här veckan`)}
         </div>
       </div>
 
       <div className="hero">
-        <button className="big-cta" onClick={() => startWorkout(chosen)} aria-label={`Let's train: start ${chosen.name}`}>
-          Let’s train
+        <button
+          className="big-cta"
+          onClick={() => startWorkout(chosen)}
+          aria-label={tr(`Let's train: start ${L(chosen.name)}`, `Nu kör vi: starta ${L(chosen.name)}`)}
+        >
+          {tr('Let’s train', 'Nu kör vi')}
         </button>
         <div className="next-up">
-          <span className="muted">{pickedIndex === null ? 'Next up' : 'You picked'}</span>
-          <span className="name">{chosen.name}</span>
+          <span className="muted">{pickedIndex === null ? tr('Next up', 'Nästa pass') : tr('You picked', 'Du valde')}</span>
+          <span className="name">{L(chosen.name)}</span>
           <span className="meta">
-            {chosen.focus} · {chosen.exercises.length} exercises · ~{minutes} min
+            {L(chosen.focus)} · {chosen.exercises.length} {tr('exercises', 'övningar')} · ~{minutes} min
           </span>
         </div>
         <button className="link small" style={{ marginTop: 10 }} onClick={() => setPicking((p) => !p)}>
-          {picking ? 'Hide sessions' : 'Pick another session'}
+          {picking ? tr('Hide sessions', 'Dölj pass') : tr('Pick another session', 'Välj ett annat pass')}
         </button>
       </div>
 
@@ -95,19 +102,19 @@ export default function TrainHome({ onNavigate }: { onNavigate: (t: Tab) => void
               >
                 <span className="radio" aria-hidden />
                 <span>
-                  <span className="title">{s.name}</span>
+                  <span className="title">{L(s.name)}</span>
                   <br />
-                  <span className="sub">{s.focus}</span>
+                  <span className="sub">{L(s.focus)}</span>
                 </span>
                 <span className="count">
-                  {s.exercises.length} ex · ~{estimateMinutes(s, profile.minutesPerSession)} min
+                  {s.exercises.length} {tr('ex', 'övn')} · ~{estimateMinutes(s, profile.minutesPerSession)} min
                 </span>
               </button>
               {peekIndex === i && (
                 <ul className="exercise-peek">
                   {s.exercises.map((e, j) => (
                     <li key={j}>
-                      {e.name} <span>{e.sets}×{e.reps}</span>
+                      {L(e.name)} <span>{e.sets}×{L(e.reps)}</span>
                     </li>
                   ))}
                 </ul>
@@ -119,11 +126,14 @@ export default function TrainHome({ onNavigate }: { onNavigate: (t: Tab) => void
 
       <section className="section">
         <div className="section-head">
-          <h2>This week</h2>
+          <h2>{tr('This week', 'Den här veckan')}</h2>
           <span className="aside">
             {cycle.startedOn
-              ? `rolling · started ${new Date(cycle.startedOn + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
-              : 'rolling · starts with your next session'}
+              ? tr(
+                  `rolling · started ${fmtDate(cycle.startedOn, { day: 'numeric', month: 'short' })}`,
+                  `rullande · startade ${fmtDate(cycle.startedOn, { day: 'numeric', month: 'short' })}`,
+                )
+              : tr('rolling · starts with your next session', 'rullande · börjar med ditt nästa pass')}
           </span>
         </div>
         <ol className="week-list">
@@ -134,36 +144,40 @@ export default function TrainHome({ onNavigate }: { onNavigate: (t: Tab) => void
               </span>
               <span className="label">{day.label}</span>
               <span>
-                <span className="title-text">{day.title}</span>
+                <span className="title-text">{L(day.title)}</span>
                 <div className="muted small">{day.detail}</div>
               </span>
-              <span className="tick" aria-label={day.done ? 'done' : 'not done'}>
+              <span className="tick" aria-label={day.done ? tr('done', 'klart') : tr('not done', 'inte klart')}>
                 {day.done ? '✓' : ''}
               </span>
             </li>
           ))}
         </ol>
         <p className="muted small">
-          {schedule.summaryLine}. The list resets the moment you finish the last session of the pass,
-          whatever day it is.
+          {schedule.summaryLine}.{' '}
+          {tr(
+            'The list resets the moment you finish the last session of the pass, whatever day it is.',
+            'Listan nollställs så fort du är klar med det sista passet i omgången, oavsett veckodag.',
+          )}
         </p>
         <p className="muted small">
-          👟 {schedule.dailySteps.toLocaleString()} steps a day. {schedule.conditioning.note}
+          👟 {tr(`${schedule.dailySteps.toLocaleString()} steps a day.`, `${schedule.dailySteps.toLocaleString()} steg per dag.`)}{' '}
+          {schedule.conditioning.note}
         </p>
         {schedule.rotationNote && <p className="muted small">🔁 {schedule.rotationNote}</p>}
         <p className="small">
           <button className="link" onClick={() => onNavigate('settings')}>
-            Change program or training days
+            {tr('Change program or training days', 'Byt program eller träningsdagar')}
           </button>
         </p>
       </section>
 
       <section className="section">
         <div className="section-head">
-          <h2>Something else today?</h2>
+          <h2>{tr('Something else today?', 'Något annat idag?')}</h2>
         </div>
-        <div className="chip-row" role="tablist" aria-label="Other training">
-          {OTHER.map((c) => (
+        <div className="chip-row" role="tablist" aria-label={tr('Other training', 'Annan träning')}>
+          {otherChips().map((c) => (
             <button
               key={c.id}
               role="tab"
@@ -182,18 +196,18 @@ export default function TrainHome({ onNavigate }: { onNavigate: (t: Tab) => void
       {recent.length > 0 && (
         <section className="section">
           <div className="section-head">
-            <h2>Lately</h2>
+            <h2>{tr('Lately', 'Senaste')}</h2>
             <button className="link small" onClick={() => onNavigate('progress')}>
-              All progress
+              {tr('All progress', 'All utveckling')}
             </button>
           </div>
           {recent.map((w, i) => (
             <div className="check-row" key={`${w.date}-${w.sessionName}-${i}`}>
               <span>
-                <strong>{w.sessionName}</strong>{' '}
+                <strong>{L(w.sessionName)}</strong>{' '}
                 <span className="muted small">
                   {w.date} · {w.durationMin} min
-                  {w.totalSets > 0 && ` · ${w.totalSets} sets · ${w.totalVolumeKg.toLocaleString()} kg`}
+                  {w.totalSets > 0 && ` · ${w.totalSets} ${tr('sets', 'set')} · ${w.totalVolumeKg.toLocaleString()} kg`}
                 </span>
               </span>
             </div>
@@ -208,21 +222,26 @@ function BonusStrength({ session, onStart }: { session: WorkoutSession; onStart:
   return (
     <div className="card">
       <h2>
-        {session.name} <span className="pill info">{session.exercises.length} exercises</span>
+        {L(session.name)}{' '}
+        <span className="pill info">
+          {session.exercises.length} {tr('exercises', 'övningar')}
+        </span>
       </h2>
       <p className="muted">
-        An extra whole-body session for days when you want more. It is logged like any workout but
-        leaves your rotation and this week’s checklist untouched.
+        {tr(
+          'An extra whole-body session for days when you want more. It is logged like any workout but leaves your rotation and this week’s checklist untouched.',
+          'Ett extra helkroppspass för dagar när du vill ha mer. Det loggas som vilket pass som helst men rör inte din rotation eller veckans checklista.',
+        )}
       </p>
       <ul className="exercise-peek" style={{ paddingLeft: 0 }}>
         {session.exercises.map((e, i) => (
           <li key={i}>
-            {e.name} <span>{e.sets}×{e.reps}</span>
+            {L(e.name)} <span>{e.sets}×{L(e.reps)}</span>
           </li>
         ))}
       </ul>
       <button className="primary" onClick={() => onStart(session)}>
-        ▶ Start bonus session
+        ▶ {tr('Start bonus session', 'Starta bonuspass')}
       </button>
     </div>
   )

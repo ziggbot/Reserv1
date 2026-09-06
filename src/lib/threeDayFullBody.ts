@@ -1,6 +1,7 @@
 import type { ExercisePrescription, Profile, WorkoutProgram, WorkoutSession } from './types'
 import { buildCardio, buildCautions } from './programs'
 import { recommendProgram } from './programMatrix'
+import { tr } from '../i18n'
 
 /**
  * The user's own "3 Day Full Body" program (based on svensktkosttillskott.se's
@@ -77,12 +78,23 @@ export function threeDayFullBody(profile: Profile): WorkoutProgram {
     sessions: [PASS_1, PASS_2, PASS_3],
     cardio: buildCardio(profile),
     progressionRules: [
-      'Double progression: when you hit the top of the rep target on all sets with good form, add weight (2.5–5%) next time.',
-      'Log every session — the app remembers your last weights and prefills them.',
-      'A grinding, form-breaking rep counts as a failed rep. Stay 1–2 reps shy of failure on most sets.',
+      tr(
+        'Double progression: when you hit the top of the rep target on all sets with good form, add weight (2.5–5%) next time.',
+        'Dubbel progression: när du når toppen av repsmålet på alla set med bra teknik, lägg på vikt (2,5–5 %) nästa gång.',
+      ),
+      tr(
+        'Log every session — the app remembers your last weights and prefills them.',
+        'Logga varje pass — appen kommer ihåg dina senaste vikter och fyller i dem åt dig.',
+      ),
+      tr(
+        'A grinding, form-breaking rep counts as a failed rep. Stay 1–2 reps shy of failure on most sets.',
+        'En rep som maler och där tekniken brister räknas som misslyckad. Håll dig 1–2 reps från failure på de flesta set.',
+      ),
     ],
-    deloadRule:
+    deloadRule: tr(
       'Every 5th week, or whenever sleep/joints/motivation tank: cut sets in half and keep weights at ~70% for one week.',
+      'Var 5:e vecka, eller när sömn/leder/motivation dyker: halvera antalet set och håll vikterna på ~70 % i en vecka.',
+    ),
     cautions: buildCautions(profile),
   }
 }

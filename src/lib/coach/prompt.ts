@@ -1,4 +1,5 @@
 import type { CoachContext } from './types'
+import { getLocale, tr } from '../../i18n'
 
 /**
  * Shared system prompt + parsing for the LLM coach providers. Both the Claude
@@ -10,8 +11,10 @@ export function buildSystemPrompt(ctx: CoachContext): string {
   const p = ctx.profile
   const conds = p.medicalConditions.length ? p.medicalConditions.join(', ') : 'none'
   const injuries = p.injuries.length ? p.injuries.join(', ') : 'none'
+  const language = getLocale() === 'sv' ? 'Swedish' : 'English'
   return [
     'You are FitBlueprint, a friendly, evidence-based personal trainer and nutrition coach.',
+    `Answer in ${language} — the same language as the user's interface (the "reply" and "summary" strings below must be in ${language}).`,
     'Keep replies short, concrete and encouraging. Base advice on mainstream exercise-science consensus (progressive overload, 1.6–2.2 g/kg protein, muscle-sparing fat loss, WHO activity guidelines). Never give medical advice; for red-flag symptoms tell the user to see a doctor.',
     '',
     "USER PROFILE:",
@@ -71,11 +74,11 @@ export function parseCoachJson(text: string): { reply: string; proposal?: unknow
 
 /** Turn parsed JSON into a CoachReply, validating the proposal changes defensively. */
 export function toCoachReply(parsed: { reply: string; proposal?: unknown }) {
-  const reply = parsed.reply || 'Okay!'
+  const reply = parsed.reply || tr('Okay!', 'Okej!')
   const prop = parsed.proposal as { summary?: string; changes?: unknown } | null | undefined
   if (!prop || !Array.isArray(prop.changes) || prop.changes.length === 0) return { text: reply }
   const valid = ['daysPerWeek', 'minutesPerSession', 'goal', 'goalWeightKg', 'addExercise', 'note']
   const changes = (prop.changes as { type?: string }[]).filter((c) => c && valid.includes(c.type ?? ''))
   if (changes.length === 0) return { text: reply }
-  return { text: reply, proposal: { summary: prop.summary || 'Update plan', changes: changes as never } }
+  return { text: reply, proposal: { summary: prop.summary || tr('Update plan', 'Uppdatera planen'), changes: changes as never } }
 }

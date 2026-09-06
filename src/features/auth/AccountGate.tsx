@@ -13,6 +13,8 @@ import { setSession } from '../../state/session'
 import { bindAccountStorage, importLegacyState, todayIso } from '../../state/store'
 import { storageIsPersistent } from '../../state/storage'
 import { startSync } from '../../state/cloudSync'
+import { tr, fmtDate } from '../../i18n'
+import LanguageToggle from '../../i18n/LanguageToggle'
 
 type Mode = 'list' | 'create' | 'unlock'
 
@@ -35,27 +37,31 @@ export default function AccountGate({ onReady }: { onReady: () => void }) {
         <span style={{ fontSize: '1.6rem' }}>🔒</span>
         <div>
           <div className="title">FitBlueprint</div>
-          <div className="subtitle">Private, encrypted profiles</div>
+          <div className="subtitle">{tr('Private, encrypted profiles', 'Privata, krypterade profiler')}</div>
         </div>
+        <LanguageToggle />
       </div>
 
       {!hasCrypto && (
         <div className="banner warn">
-          Secure encryption isn’t available in this browser/sandbox, so profiles can’t be encrypted or
-          saved between visits here. You can still try the app for this session. On the installed app your
-          data is encrypted at rest.
+          {tr(
+            'Secure encryption isn’t available in this browser/sandbox, so profiles can’t be encrypted or saved between visits here. You can still try the app for this session. On the installed app your data is encrypted at rest.',
+            'Säker kryptering finns inte i den här webbläsaren/sandlådan, så profiler kan inte krypteras eller sparas mellan besök här. Du kan ändå testa appen under den här sessionen. I den installerade appen krypteras din data när den lagras.',
+          )}
         </div>
       )}
       {hasCrypto && !storageIsPersistent && (
         <div className="banner info">
-          This preview can’t save to disk, so anything you enter lasts only for this session. The installed
-          app stores your encrypted data permanently on your device.
+          {tr(
+            'This preview can’t save to disk, so anything you enter lasts only for this session. The installed app stores your encrypted data permanently on your device.',
+            'Den här förhandsvisningen kan inte spara till disk, så allt du anger finns bara kvar under den här sessionen. Den installerade appen sparar din krypterade data permanent på din enhet.',
+          )}
         </div>
       )}
 
       {mode === 'list' && (
         <>
-          <h2>Choose your profile</h2>
+          <h2>{tr('Choose your profile', 'Välj din profil')}</h2>
           <div className="account-list">
             {accounts.map((a) => (
               <button
@@ -71,13 +77,15 @@ export default function AccountGate({ onReady }: { onReady: () => void }) {
                 </span>
                 <span>
                   {a.displayName}
-                  <span className="desc">Created {a.createdAt}</span>
+                  <span className="desc">
+                    {tr('Created', 'Skapad')} {fmtDate(a.createdAt, { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </span>
                 </span>
               </button>
             ))}
           </div>
           <button className="primary" onClick={() => setMode('create')}>
-            + New profile
+            + {tr('New profile', 'Ny profil')}
           </button>
         </>
       )}
@@ -129,14 +137,14 @@ function UnlockForm({
     const key = await unlockAccount(account.id, passcode)
     setBusy(false)
     if (key) onUnlocked(key)
-    else setError('Wrong passcode. Try again.')
+    else setError(tr('Wrong passcode. Try again.', 'Fel kod. Försök igen.'))
   }
 
   return (
     <>
-      <h2>Unlock {account.displayName}</h2>
+      <h2>{tr(`Unlock ${account.displayName}`, `Lås upp ${account.displayName}`)}</h2>
       <div className="field">
-        <label>Passcode</label>
+        <label>{tr('Passcode', 'Kod')}</label>
         <input
           type="password"
           value={passcode}
@@ -148,10 +156,10 @@ function UnlockForm({
       {error && <div className="banner danger">{error}</div>}
       <div className="wizard-nav">
         <button className="ghost" onClick={onBack}>
-          Back
+          {tr('Back', 'Tillbaka')}
         </button>
         <button className="primary" disabled={!passcode || busy} onClick={attempt}>
-          {busy ? 'Unlocking…' : 'Unlock'}
+          {busy ? tr('Unlocking…', 'Låser upp…') : tr('Unlock', 'Lås upp')}
         </button>
       </div>
     </>
@@ -189,7 +197,7 @@ function CreateForm({
         onCreated(
           {
             id: 'ephemeral',
-            displayName: name.trim() || 'Me',
+            displayName: name.trim() || tr('Me', 'Jag'),
             saltB64: '',
             verifierB64: '',
             createdAt: todayIso(),
@@ -199,31 +207,38 @@ function CreateForm({
         )
       }
     } catch {
-      setError('Could not create the profile in this browser.')
+      setError(tr('Could not create the profile in this browser.', 'Kunde inte skapa profilen i den här webbläsaren.'))
       setBusy(false)
     }
   }
 
   return (
     <>
-      <h2>Create your profile</h2>
+      <h2>{tr('Create your profile', 'Skapa din profil')}</h2>
       <div className="field">
-        <label>Display name</label>
-        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Peter" />
+        <label>{tr('Display name', 'Visningsnamn')}</label>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder={tr('e.g. Peter', 't.ex. Peter')} />
       </div>
       {hasCrypto && (
         <>
           <div className="field">
-            <label>Passcode (min 6 characters)</label>
+            <label>{tr('Passcode (min 6 characters)', 'Kod (minst 6 tecken)')}</label>
             <input type="password" value={passcode} onChange={(e) => setPasscode(e.target.value)} />
             <div className="hint">
-              This passcode encrypts your data. We can’t recover it — if you forget it, the data is gone.
+              {tr(
+                'This passcode encrypts your data. We can’t recover it — if you forget it, the data is gone.',
+                'Koden krypterar din data. Vi kan inte återställa den – glömmer du koden är datan borta.',
+              )}
             </div>
           </div>
           <div className="field">
-            <label>Confirm passcode</label>
+            <label>{tr('Confirm passcode', 'Bekräfta kod')}</label>
             <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
-            {confirm && confirm !== passcode && <div className="hint" style={{ color: 'var(--danger)' }}>Passcodes don’t match.</div>}
+            {confirm && confirm !== passcode && (
+              <div className="hint" style={{ color: 'var(--danger)' }}>
+                {tr('Passcodes don’t match.', 'Koderna matchar inte.')}
+              </div>
+            )}
           </div>
         </>
       )}
@@ -231,7 +246,10 @@ function CreateForm({
       <label className="consent-row">
         <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
         <span>
-          I consent to FitBlueprint storing my fitness and health data on this device to provide coaching.{' '}
+          {tr(
+            'I consent to FitBlueprint storing my fitness and health data on this device to provide coaching.',
+            'Jag samtycker till att FitBlueprint lagrar mina tränings- och hälsodata på den här enheten för att ge coachning.',
+          )}{' '}
           <a
             href="#"
             onClick={(e) => {
@@ -239,18 +257,17 @@ function CreateForm({
               setShowNotice((v) => !v)
             }}
           >
-            {showNotice ? 'Hide' : 'Read'} privacy notice
+            {showNotice ? tr('Hide privacy notice', 'Dölj integritetsmeddelande') : tr('Read privacy notice', 'Läs integritetsmeddelande')}
           </a>
         </span>
       </label>
       {showNotice && (
         <div className="banner info small">
-          <strong>Privacy notice.</strong> Your data (profile, weigh-ins, workouts, habits) is stored only
-          on this device, encrypted with a key derived from your passcode (PBKDF2 + AES-256-GCM). It is
-          never sent to any server — there are no third-party processors and no transfers. You are the data
-          controller. You can export all your data or erase it entirely at any time from Settings (GDPR
-          Articles 17 & 20). Legal basis: your consent (Article 6(1)(a)), withdrawable anytime by erasing
-          your profile.
+          <strong>{tr('Privacy notice.', 'Integritetsmeddelande.')}</strong>{' '}
+          {tr(
+            'Your data (profile, weigh-ins, workouts, habits) is stored only on this device, encrypted with a key derived from your passcode (PBKDF2 + AES-256-GCM). It is never sent to any server — there are no third-party processors and no transfers. You are the data controller. You can export all your data or erase it entirely at any time from Settings (GDPR Articles 17 & 20). Legal basis: your consent (Article 6(1)(a)), withdrawable anytime by erasing your profile.',
+            'Din data (profil, invägningar, pass, vanor) lagras endast på den här enheten, krypterad med en nyckel som härleds från din kod (PBKDF2 + AES-256-GCM). Den skickas aldrig till någon server – det finns inga tredjepartsbiträden och inga överföringar. Du är personuppgiftsansvarig. Du kan när som helst exportera all din data eller radera den helt under Inställningar (GDPR artikel 17 & 20). Rättslig grund: ditt samtycke (artikel 6.1 a), som du kan återkalla när som helst genom att radera din profil.',
+          )}
         </div>
       )}
       {error && <div className="banner danger">{error}</div>}
@@ -258,13 +275,13 @@ function CreateForm({
       <div className="wizard-nav">
         {onBack ? (
           <button className="ghost" onClick={onBack}>
-            Back
+            {tr('Back', 'Tillbaka')}
           </button>
         ) : (
           <span />
         )}
         <button className="primary" disabled={!valid || busy} onClick={create}>
-          {busy ? 'Creating…' : 'Create & continue'}
+          {busy ? tr('Creating…', 'Skapar…') : tr('Create & continue', 'Skapa & fortsätt')}
         </button>
       </div>
     </>

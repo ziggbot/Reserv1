@@ -30,6 +30,14 @@ More → Settings.
 The bottom bar has three items: **Progress**, **Train** (centre) and **More**. Everything that is
 not training sits behind More.
 
+## Languages
+
+Swedish is the default; English is one tap away (SV / EN in the header, before or after unlock).
+UI strings use `tr(en, sv)` at the point of use; names that are stored or used as keys (exercise
+and session names, split names) stay English in data and are translated for display through the
+glossary in `src/i18n/glossary*.ts`, so histories and prefills keep matching when you switch. The
+user's own imported Swedish program passes through untouched.
+
 ## Cloud sync (Supabase)
 
 Optional. Everything works offline on one device; sign in under More → Settings → Cloud sync and
