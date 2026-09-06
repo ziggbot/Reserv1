@@ -61,6 +61,7 @@ type AppData = Pick<
   | 'planHistory'
   | 'coachSettings'
   | 'coachApiKeys'
+  | 'coachAssessment'
 >
 
 const INITIAL_DATA: AppData = {
@@ -78,6 +79,7 @@ const INITIAL_DATA: AppData = {
   planHistory: [],
   coachSettings: DEFAULT_COACH_SETTINGS,
   coachApiKeys: {},
+  coachAssessment: null,
 }
 
 export interface WorkoutLogEntry {
@@ -102,6 +104,8 @@ interface AppState {
   planHistory: PlanRevision[]
   coachSettings: CoachSettings
   coachApiKeys: CoachApiKeys
+  /** Latest LLM assessment shown under Progress, keyed to the data it was built from. */
+  coachAssessment: CoachAssessment | null
 
   setProfile: (p: Profile) => void
   resetAll: () => void
@@ -124,6 +128,14 @@ interface AppState {
   restoreRevision: (id: string) => void
   setCoachSettings: (patch: Partial<CoachSettings>) => void
   setCoachApiKey: (provider: 'claude' | 'openai', key: string | undefined) => void
+  setCoachAssessment: (a: CoachAssessment | null) => void
+}
+
+export interface CoachAssessment {
+  text: string
+  at: string // ISO datetime
+  key: string // groundingKey() at the time
+  provider: string
 }
 
 export function todayIso(): string {
@@ -373,6 +385,8 @@ export const useAppStore = create<AppState>()(
         }),
 
       setCoachSettings: (patch) => set((s) => ({ coachSettings: { ...s.coachSettings, ...patch } })),
+
+      setCoachAssessment: (a) => set({ coachAssessment: a }),
 
       setCoachApiKey: (provider, key) =>
         set((s) => {

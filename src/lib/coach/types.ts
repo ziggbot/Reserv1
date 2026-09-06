@@ -29,6 +29,8 @@ export interface CoachContext {
   profile: Profile
   program: WorkoutProgram
   scheduleSummary: string
+  /** Digest of the training log (see grounding.ts); omitted only for connection tests. */
+  grounding?: string
 }
 
 export interface CoachReply {

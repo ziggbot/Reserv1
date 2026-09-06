@@ -1,8 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppStore, todayIso, weeksSince } from '../../state/store'
 import { analyzeProgress, fatLossPillars, rollingAverage } from '../../lib/fatloss'
 import { macroTargets, targetWeeklyLossKg, tdee } from '../../lib/calculations'
 import { buildHabitPlan, currentStreak } from '../../lib/habits'
+import { topExerciseTrends } from '../../lib/trends'
+import { resolvePrimaryCoach } from '../../lib/coach'
+import { buildGrounding, groundingKey } from '../../lib/coach/grounding'
+import { requestAssessment } from '../../lib/coach/assessment'
+import { defaultProgram } from '../../lib/threeDayFullBody'
+import { buildWeeklySchedule } from '../../lib/weeklySchedule'
 import { isoWeek, startOfWeekIso, addDaysIso } from '../../lib/trainWeek'
 import EvidencePanel from '../shared/EvidencePanel'
 import { tr, L, fmtDate, dateLocale, useLocale } from '../../i18n'
@@ -40,9 +46,54 @@ function statusLabel(status: string): { label: string; cls: string } {
 
 export default function ProgressView() {
   useLocale()
-  const { profile, weighIns, planStartDate, completedWorkouts, workoutLog, habitChecks, addWeighIn, setProfile } =
-    useAppStore()
+  const {
+    profile,
+    weighIns,
+    planStartDate,
+    completedWorkouts,
+    workoutLog,
+    habitChecks,
+    planHistory,
+    customProgram,
+    coachSettings,
+    coachApiKeys,
+    coachAssessment,
+    addWeighIn,
+    setProfile,
+    setCoachAssessment,
+  } = useAppStore()
   const [weight, setWeight] = useState('')
+  const [assessing, setAssessing] = useState(false)
+  const [assessError, setAssessError] = useState<string | null>(null)
+
+  // LLM coach's read on the log, refreshed whenever the underlying data changes.
+  const llm = resolvePrimaryCoach(coachSettings, coachApiKeys)
+  const today0 = todayIso()
+  const dataKey = groundingKey({ completedWorkouts, weighIns, planHistory, today: today0 })
+  const stale = coachAssessment === null || coachAssessment.key !== dataKey || coachAssessment.provider !== llm?.id
+  async function refreshAssessment() {
+    if (!llm || !profile || assessing) return
+    setAssessing(true)
+    setAssessError(null)
+    try {
+      const program = defaultProgram(profile, customProgram)
+      const text = await requestAssessment(llm, {
+        profile,
+        program,
+        scheduleSummary: buildWeeklySchedule(profile, program).summaryLine,
+        grounding: buildGrounding({ profile, program, completedWorkouts, weighIns, habitChecks, planStartDate, planHistory, today: today0 }),
+      })
+      setCoachAssessment({ text, at: new Date().toISOString(), key: dataKey, provider: llm.id })
+    } catch (e) {
+      setAssessError(e instanceof Error ? e.message : 'failed')
+    } finally {
+      setAssessing(false)
+    }
+  }
+  useEffect(() => {
+    if (llm && stale && !assessing && !assessError) void refreshAssessment()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [llm?.id, dataKey])
   const [statWeight, setStatWeight] = useState(profile ? String(profile.weightKg) : '')
   const [goalWeight, setGoalWeight] = useState(profile?.goalWeightKg ? String(profile.goalWeightKg) : '')
   const [statsSaved, setStatsSaved] = useState(false)
@@ -182,7 +233,46 @@ export default function ProgressView() {
         )}
       </div>
 
-      {isCutting && (
+      {llm && (
+        <div className="card">
+          <h2>
+            {tr('🧭 Coach’s call', '🧭 Coachens bedömning')}{' '}
+            {isCutting && <span className={`pill ${status.cls}`}>{status.label}</span>}
+          </h2>
+          {coachAssessment && coachAssessment.provider === llm.id ? (
+            <div className="assessment">
+              {coachAssessment.text.split(/\n+/).map((line, i) => (
+                <p key={i}>{line}</p>
+              ))}
+              <p className="muted small">
+                {tr('From', 'Från')} {llm.label} ·{' '}
+                {new Date(coachAssessment.at).toLocaleString(dateLocale(), { dateStyle: 'short', timeStyle: 'short' })}
+                {stale && !assessing && ` · ${tr('new data since', 'ny data sedan dess')}`}
+              </p>
+            </div>
+          ) : (
+            !assessing && !assessError && <p className="muted small">{tr('Asking your coach…', 'Frågar din coach…')}</p>
+          )}
+          {assessing && <p className="muted small">{tr('Reading your log…', 'Läser din logg…')}</p>}
+          {assessError && (
+            <div className="banner warn small">
+              {tr('Couldn’t reach', 'Kunde inte nå')} {llm.label} ({assessError}). {tr('Showing the built-in analysis below.', 'Visar den inbyggda analysen nedan.')}
+            </div>
+          )}
+          <button className="ghost small-btn" disabled={assessing} onClick={() => void refreshAssessment()}>
+            {tr('↻ Ask again', '↻ Fråga igen')}
+          </button>
+          {assessError && isCutting && (
+            <ul>
+              {analysis.recommendation.map((r) => (
+                <li key={r}>{r}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {!llm && isCutting && (
         <div className="card">
           <h2>
             {tr('🧭 Coach’s call', '🧭 Coachens bedömning')} <span className={`pill ${status.cls}`}>{status.label}</span>
@@ -409,23 +499,6 @@ function TrainingTimeline({
       )}
     </div>
   )
-}
-
-/** Best-set weight trend for the most-logged exercises. */
-function topExerciseTrends(workouts: { exercises: { name: string; sets: { weightKg: number | null }[] }[] }[]) {
-  const byExercise = new Map<string, number[]>()
-  for (const w of workouts) {
-    for (const ex of w.exercises) {
-      const best = ex.sets.reduce((b, s) => Math.max(b, s.weightKg ?? 0), 0)
-      if (best <= 0) continue
-      byExercise.set(ex.name, [...(byExercise.get(ex.name) ?? []), best])
-    }
-  }
-  return [...byExercise.entries()]
-    .filter(([, arr]) => arr.length >= 2)
-    .sort((a, b) => b[1].length - a[1].length)
-    .slice(0, 6)
-    .map(([name, arr]) => ({ name, first: arr[0], last: arr[arr.length - 1] }))
 }
 
 /** Inline SVG chart: daily weigh-ins (dots), 7-day rolling average (line), goal (dashed). */

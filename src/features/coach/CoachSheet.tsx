@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { useAppStore } from '../../state/store'
+import { useAppStore, todayIso } from '../../state/store'
 import { defaultProgram } from '../../lib/threeDayFullBody'
 import { buildWeeklySchedule } from '../../lib/weeklySchedule'
 import { resolveCoach } from '../../lib/coach'
+import { buildGrounding } from '../../lib/coach/grounding'
 import { describeChange, type ChatMessage, type PlanProposal } from '../../lib/coach/types'
 import PlanHistory from './PlanHistory'
 import { tr } from '../../i18n'
@@ -17,6 +18,11 @@ export default function CoachSheet({ onClose }: { onClose: () => void }) {
   const {
     profile,
     customProgram,
+    completedWorkouts,
+    weighIns,
+    habitChecks,
+    planStartDate,
+    planHistory,
     coachMessages,
     coachSettings,
     coachApiKeys,
@@ -48,6 +54,16 @@ export default function CoachSheet({ onClose }: { onClose: () => void }) {
       profile: profile!,
       program,
       scheduleSummary: buildWeeklySchedule(profile!, program).summaryLine,
+      grounding: buildGrounding({
+        profile: profile!,
+        program,
+        completedWorkouts,
+        weighIns,
+        habitChecks,
+        planStartDate,
+        planHistory,
+        today: todayIso(),
+      }),
     }
     let reply
     try {

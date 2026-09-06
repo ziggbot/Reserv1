@@ -819,6 +819,9 @@ details.evidence summary { cursor: pointer; color: var(--text-dim); font-size: 0
 .overview-session strong { font-family: var(--hand); font-size: 1.25rem; }
 .overview-session .exercise-peek { margin-top: 4px; }
 
+.assessment p { margin: 0.35em 0; }
+.assessment { border-left: 2px solid var(--ink); padding-left: 12px; margin: 6px 0 10px; }
+
 /* ---------- Weight chart ---------- */
 .weight-chart { width: 100%; min-width: 480px; height: auto; }
 .chart-grid { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 3 4; }

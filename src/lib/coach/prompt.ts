@@ -25,6 +25,15 @@ export function buildSystemPrompt(ctx: CoachContext): string {
     `- Medical conditions: ${conds}; injuries: ${injuries}`,
     `- Current weekly plan: ${ctx.scheduleSummary}`,
     '',
+    ...(ctx.grounding
+      ? [
+          'RECENT TRAINING DATA (from the user’s log — treat as ground truth, newest first):',
+          ctx.grounding,
+          '',
+          'Ground every answer in this data: refer to actual sessions, lifts, weights and trends by name and number when relevant, notice missed sessions or stalls, and never claim progress the log does not show.',
+          '',
+        ]
+      : []),
     'When the user asks for a concrete change to their plan (training days per week, session length, goal, goal weight, or adding an exercise), propose it as a structured change they can review.',
     'ALWAYS respond with a single JSON object and nothing else, in this exact shape:',
     '{"reply": string, "proposal": null | {"summary": string, "changes": Change[]}}',
