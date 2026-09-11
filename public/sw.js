@@ -7,17 +7,13 @@
  *  - Everything else same-origin: network first with cache fallback.
  * Bump CACHE whenever the strategy changes so old caches are dropped.
  */
-const CACHE = 'fitblueprint-v4'
+const CACHE = 'fitblueprint-v5'
 const PRECACHE = [
   './',
   './index.html',
   './icon.svg',
   './icon-192.png',
   './apple-touch-icon.png',
-  './fonts/caveat-latin.woff2',
-  './fonts/caveat-latin-ext.woff2',
-  './fonts/patrick-hand-latin.woff2',
-  './fonts/patrick-hand-latin-ext.woff2',
 ]
 
 self.addEventListener('install', (event) => {
@@ -33,7 +29,7 @@ self.addEventListener('activate', (event) => {
 })
 
 function isImmutable(url) {
-  return url.pathname.includes('/assets/') || url.pathname.includes('/fonts/')
+  return url.pathname.includes('/assets/')
 }
 
 async function networkFirst(request) {

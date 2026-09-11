@@ -68,8 +68,8 @@ Sync is last-write-wins on the whole profile, debounced 1.5 s after each change.
 
 White paper, dark ink, handwritten type: [Caveat](https://fonts.google.com/specimen/Caveat) for
 headings and the call-to-action, [Patrick Hand](https://fonts.google.com/specimen/Patrick+Hand)
-for body copy. Both are SIL Open Font License and self-hosted in `public/fonts/` so the installed
-PWA works offline.
+for body copy. Both are SIL Open Font License, self-hosted in `src/assets/fonts/` and inlined into
+the stylesheet at build time, so they render on any host and offline.
 
 ## Research the engine encodes
 
