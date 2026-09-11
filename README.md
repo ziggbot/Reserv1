@@ -38,6 +38,17 @@ and session names, split names) stay English in data and are translated for disp
 glossary in `src/i18n/glossary*.ts`, so histories and prefills keep matching when you switch. The
 user's own imported Swedish program passes through untouched.
 
+## Hosting
+
+- **GitHub Pages**: `.github/workflows/pages.yml` builds and deploys on push.
+- **Render**: `render.yaml` is a Blueprint for a static site (build `npm ci && npm run build`,
+  publish `dist`, cache headers that let new deploys show up while hashed assets stay cached).
+  New → Blueprint → choose the repo → Apply. Set `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`
+  in the dashboard if you use cloud sync.
+
+Either host serves the app over HTTPS with a manifest and service worker, so it installs as a
+home-screen app on iPhone (Share → Add to Home Screen) and Android (Install app).
+
 ## Cloud sync (Supabase)
 
 Optional. Everything works offline on one device; sign in under More → Settings → Cloud sync and

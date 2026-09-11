@@ -7,11 +7,13 @@
  *  - Everything else same-origin: network first with cache fallback.
  * Bump CACHE whenever the strategy changes so old caches are dropped.
  */
-const CACHE = 'fitblueprint-v3'
+const CACHE = 'fitblueprint-v4'
 const PRECACHE = [
   './',
   './index.html',
   './icon.svg',
+  './icon-192.png',
+  './apple-touch-icon.png',
   './fonts/caveat-latin.woff2',
   './fonts/caveat-latin-ext.woff2',
   './fonts/patrick-hand-latin.woff2',
