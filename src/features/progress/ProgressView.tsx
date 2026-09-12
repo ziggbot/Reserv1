@@ -4,6 +4,7 @@ import { analyzeProgress, fatLossPillars, rollingAverage } from '../../lib/fatlo
 import { macroTargets, targetWeeklyLossKg, tdee } from '../../lib/calculations'
 import { buildHabitPlan, currentStreak } from '../../lib/habits'
 import { topExerciseTrends } from '../../lib/trends'
+import { trainingDays } from '../../lib/trainingDays'
 import { resolvePrimaryCoach } from '../../lib/coach'
 import { buildGrounding, groundingKey } from '../../lib/coach/grounding'
 import { requestAssessment } from '../../lib/coach/assessment'
@@ -107,6 +108,7 @@ export default function ProgressView() {
   const isCutting = profile.goal === 'fat_loss'
 
   const thisWeek = completedWorkouts.filter((w) => weeksSince(w.date, today) === 0)
+  const days = trainingDays(profile)
   const weekVolume = thisWeek.reduce((a, w) => a + w.totalVolumeKg, 0)
   const habitPlan = buildHabitPlan(profile)
   const streaks = habitPlan.habits
@@ -136,9 +138,19 @@ export default function ProgressView() {
             <div className="label">{tr('kg this week', 'kg denna vecka')}</div>
           </div>
           <div className="stat">
-            <div className="value">{thisWeek.length}/{profile.daysPerWeek}</div>
-            <div className="label">{tr('workouts this wk', 'pass denna vecka')}</div>
+            <div className="value">
+              {thisWeek.filter((w) => w.category === 'strength').length}/{days.strength}
+            </div>
+            <div className="label">{tr('strength this wk', 'styrka denna vecka')}</div>
           </div>
+          {(days.cardio > 0 || thisWeek.some((w) => w.category !== 'strength')) && (
+            <div className="stat">
+              <div className="value">
+                {thisWeek.filter((w) => w.category !== 'strength').length}/{days.cardio}
+              </div>
+              <div className="label">{tr('cardio this wk', 'kondition denna vecka')}</div>
+            </div>
+          )}
           <div className="stat">
             <div className="value">{weekVolume.toLocaleString(dateLocale())}</div>
             <div className="label">{tr('kg volume this wk', 'kg volym denna vecka')}</div>

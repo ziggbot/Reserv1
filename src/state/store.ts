@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
 import { SEED_MEMORY } from '../lib/threeDayFullBody'
+import { trainingDays, withTrainingDays } from '../lib/trainingDays'
 import { rawStorage } from './storage'
 import { getSession, sessionDecrypt, sessionEncrypt } from './session'
 import type { ChatMessage, PlanChange } from '../lib/coach/types'
@@ -352,8 +353,17 @@ export const useAppStore = create<AppState>()(
           for (const c of changes) {
             if (!profile && c.type !== 'note') continue
             switch (c.type) {
-              case 'daysPerWeek':
-                profile = { ...profile!, daysPerWeek: c.value }
+              case 'daysPerWeek': {
+                // Legacy change: the number of lifting days; cardio days are kept.
+                const td = trainingDays(profile!)
+                profile = withTrainingDays(profile!, c.value, td.split ? td.cardio : 0)
+                break
+              }
+              case 'strengthDaysPerWeek':
+                profile = withTrainingDays(profile!, c.value, trainingDays(profile!).cardio)
+                break
+              case 'cardioDaysPerWeek':
+                profile = withTrainingDays(profile!, trainingDays(profile!).strength, c.value)
                 break
               case 'minutesPerSession':
                 profile = { ...profile!, minutesPerSession: c.value }

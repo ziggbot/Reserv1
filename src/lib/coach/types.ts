@@ -2,7 +2,9 @@ import type { Goal, Profile, WorkoutProgram } from '../types'
 
 /** A single, reversible change the coach proposes to the user's plan. */
 export type PlanChange =
-  | { type: 'daysPerWeek'; value: number }
+  | { type: 'daysPerWeek'; value: number } // legacy: sets the strength days
+  | { type: 'strengthDaysPerWeek'; value: number }
+  | { type: 'cardioDaysPerWeek'; value: number }
   | { type: 'minutesPerSession'; value: number }
   | { type: 'goal'; value: Goal }
   | { type: 'goalWeightKg'; value: number }
@@ -43,6 +45,10 @@ export function describeChange(c: PlanChange): string {
   switch (c.type) {
     case 'daysPerWeek':
       return `Training days → ${c.value}/week`
+    case 'strengthDaysPerWeek':
+      return `Strength sessions → ${c.value}/week`
+    case 'cardioDaysPerWeek':
+      return `Cardio sessions → ${c.value}/week`
     case 'minutesPerSession':
       return `Session length → ${c.value} min`
     case 'goal':

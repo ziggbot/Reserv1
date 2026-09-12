@@ -1,5 +1,6 @@
 import type { CoachContext } from './types'
 import { getLocale, tr } from '../../i18n'
+import { describeWeek } from '../trainingDays'
 
 /**
  * Shared system prompt + parsing for the LLM coach providers. Both the Claude
@@ -20,7 +21,7 @@ export function buildSystemPrompt(ctx: CoachContext): string {
     "USER PROFILE:",
     `- Name: ${p.name}, age ${p.age}, ${p.sex}, ${p.heightCm} cm, ${p.weightKg} kg`,
     `- Goal: ${p.goal}${p.goalWeightKg ? ` (target ${p.goalWeightKg} kg)` : ''}`,
-    `- Experience: ${p.fitnessLevel}; trains ${p.daysPerWeek}×/week, ${p.minutesPerSession} min; equipment: ${p.equipment}`,
+    `- Experience: ${p.fitnessLevel}; trains ${describeWeek(p)} per week, ${p.minutesPerSession} min per session; equipment: ${p.equipment}`,
     `- Sleep ${p.sleepHours} h, stress ${p.stressLevel}, diet ${p.dietPref}`,
     `- Medical conditions: ${conds}; injuries: ${injuries}`,
     `- Current weekly plan: ${ctx.scheduleSummary}`,
@@ -34,11 +35,12 @@ export function buildSystemPrompt(ctx: CoachContext): string {
           '',
         ]
       : []),
-    'When the user asks for a concrete change to their plan (training days per week, session length, goal, goal weight, or adding an exercise), propose it as a structured change they can review.',
+    'When the user asks for a concrete change to their plan (strength or cardio sessions per week, session length, goal, goal weight, or adding an exercise), propose it as a structured change they can review.',
     'ALWAYS respond with a single JSON object and nothing else, in this exact shape:',
     '{"reply": string, "proposal": null | {"summary": string, "changes": Change[]}}',
     'Change is one of:',
-    '  {"type":"daysPerWeek","value": number 1-7}',
+    '  {"type":"strengthDaysPerWeek","value": number 1-6}',
+    '  {"type":"cardioDaysPerWeek","value": number 0-6}',
     '  {"type":"minutesPerSession","value": number 15-120}',
     '  {"type":"goal","value":"fat_loss"|"muscle_gain"|"recomp"|"general_fitness"}',
     '  {"type":"goalWeightKg","value": number}',
@@ -86,7 +88,7 @@ export function toCoachReply(parsed: { reply: string; proposal?: unknown }) {
   const reply = parsed.reply || tr('Okay!', 'Okej!')
   const prop = parsed.proposal as { summary?: string; changes?: unknown } | null | undefined
   if (!prop || !Array.isArray(prop.changes) || prop.changes.length === 0) return { text: reply }
-  const valid = ['daysPerWeek', 'minutesPerSession', 'goal', 'goalWeightKg', 'addExercise', 'note']
+  const valid = ['daysPerWeek', 'strengthDaysPerWeek', 'cardioDaysPerWeek', 'minutesPerSession', 'goal', 'goalWeightKg', 'addExercise', 'note']
   const changes = (prop.changes as { type?: string }[]).filter((c) => c && valid.includes(c.type ?? ''))
   if (changes.length === 0) return { text: reply }
   return { text: reply, proposal: { summary: prop.summary || tr('Update plan', 'Uppdatera planen'), changes: changes as never } }

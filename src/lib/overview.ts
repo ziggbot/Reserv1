@@ -11,6 +11,7 @@ import {
 import { buildWeeklySchedule } from './weeklySchedule'
 import type { Directive, FitnessLevel, Profile, WorkoutProgram } from './types'
 import { tr } from '../i18n'
+import { describeWeek } from './trainingDays'
 
 const LEVEL_SV: Record<FitnessLevel, string> = {
   beginner: 'nybörjare',
@@ -96,8 +97,8 @@ export function buildOverview(profile: Profile, program: WorkoutProgram): Direct
   d.push({
     icon: '🏋️',
     headline: tr(
-      `Train ${profile.daysPerWeek}×/week, ${profile.minutesPerSession} min`,
-      `Träna ${profile.daysPerWeek}×/vecka, ${profile.minutesPerSession} min`,
+      `Train ${describeWeek(profile)}, ${profile.minutesPerSession} min`,
+      `Träna ${describeWeek(profile)}, ${profile.minutesPerSession} min`,
     ),
     detail: tr(
       `Your week: ${schedule.summaryLine}. Progressive overload on the big lifts is the engine — see “Your training week” below and the Action tab.`,

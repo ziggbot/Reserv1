@@ -7,6 +7,7 @@ import type {
   WorkoutSession,
 } from './types'
 import { tr } from '../i18n'
+import { trainingDays } from './trainingDays'
 
 /**
  * Movement-pattern based program builder.
@@ -218,7 +219,7 @@ export interface ProgramPreset {
   id: string
   name: string
   description: string
-  overrides: Partial<Pick<Profile, 'daysPerWeek' | 'equipment' | 'minutesPerSession'>>
+  overrides: Partial<Pick<Profile, 'daysPerWeek' | 'strengthDaysPerWeek' | 'cardioDaysPerWeek' | 'equipment' | 'minutesPerSession'>>
 }
 
 /**
@@ -228,9 +229,9 @@ export interface ProgramPreset {
  */
 export const PROGRAM_PRESETS: ProgramPreset[] = [
   { id: 'recommended', name: 'Recommended for you', description: 'Built from your interview answers', overrides: {} },
-  { id: 'fullbody3', name: 'Full Body ×3', description: 'The classic 3-day plan — best value per gym hour', overrides: { daysPerWeek: 3 } },
-  { id: 'upperlower4', name: 'Upper / Lower ×4', description: '4 days, more volume per muscle', overrides: { daysPerWeek: 4 } },
-  { id: 'ppl6', name: 'Push / Pull / Legs ×6', description: '6 days for experienced lifters', overrides: { daysPerWeek: 6 } },
+  { id: 'fullbody3', name: 'Full Body ×3', description: 'The classic 3-day plan — best value per gym hour', overrides: { daysPerWeek: 3, strengthDaysPerWeek: 3 } },
+  { id: 'upperlower4', name: 'Upper / Lower ×4', description: '4 days, more volume per muscle', overrides: { daysPerWeek: 4, strengthDaysPerWeek: 4 } },
+  { id: 'ppl6', name: 'Push / Pull / Legs ×6', description: '6 days for experienced lifters', overrides: { daysPerWeek: 6, strengthDaysPerWeek: 6 } },
   { id: 'minimal30', name: '30-min Express', description: 'Short sessions for packed weeks', overrides: { minutesPerSession: 30 } },
   { id: 'travel', name: 'Bodyweight Travel', description: 'No equipment — hotel room friendly', overrides: { equipment: 'none' } },
 ]
@@ -339,7 +340,7 @@ export function buildCardio(profile: Profile) {
 }
 
 export function buildProgram(profile: Profile): WorkoutProgram {
-  const { splitName, templates } = splitFor(profile.daysPerWeek)
+  const { splitName, templates } = splitFor(trainingDays(profile).strength)
   const sessions: WorkoutSession[] = templates.map((t) => ({
     name: t.name,
     focus: t.focus,

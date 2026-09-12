@@ -1,5 +1,6 @@
 import { buildProgram } from './programs'
 import type { Profile, WorkoutProgram } from './types'
+import { trainingDays } from './trainingDays'
 import { tr } from '../i18n'
 
 /**
@@ -32,7 +33,7 @@ const WHO_SOURCE = {
 
 /** Decide the split name from goal, day-budget and experience. */
 function pickSplit(profile: Profile): { split: string; source: { name: string; url: string }; why: string } {
-  const days = profile.daysPerWeek
+  const days = trainingDays(profile).strength
 
   // Beginners always do full-body regardless of goal — frequency + skill acquisition beats a split.
   if (profile.fitnessLevel === 'beginner') {

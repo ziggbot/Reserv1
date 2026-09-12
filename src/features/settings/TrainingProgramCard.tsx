@@ -4,6 +4,8 @@ import { buildPresetProgram, buildProgram, PROGRAM_PRESETS, presetDescription, p
 import { recommendProgram } from '../../lib/programMatrix'
 import { threeDayFullBody } from '../../lib/threeDayFullBody'
 import { ProgramEditor } from '../action/ActionView'
+import { describeWeek, recommendedDays, trainingDays } from '../../lib/trainingDays'
+import { WeekSummary } from '../intake/IntakeWizard'
 import { tr, L, useLocale } from '../../i18n'
 
 export default function TrainingProgramCard({ onEditingChange }: { onEditingChange?: (editing: boolean) => void } = {}) {
@@ -22,14 +24,17 @@ export default function TrainingProgramCard({ onEditingChange }: { onEditingChan
     setCustomProgram(program, choice)
   }
 
-  function stepDays(delta: number) {
-    const next = Math.min(6, Math.max(1, profile!.daysPerWeek + delta))
-    if (next === profile!.daysPerWeek) return
-    useAppStore.getState().applyPlanChanges(
-      [{ type: 'daysPerWeek', value: next }],
-      'user',
-      `Training days → ${next}/week`,
-    )
+  const days = trainingDays(profile)
+  const recDays = recommendedDays(profile.fitnessLevel, profile.goal)
+  function stepStrength(delta: number) {
+    const next = Math.min(6, Math.max(1, days.strength + delta))
+    if (next === days.strength) return
+    useAppStore.getState().applyPlanChanges([{ type: 'strengthDaysPerWeek', value: next }], 'user', `Strength sessions → ${next}/week`)
+  }
+  function stepCardio(delta: number) {
+    const next = Math.min(4, Math.max(0, days.cardio + delta))
+    if (next === days.cardio) return
+    useAppStore.getState().applyPlanChanges([{ type: 'cardioDaysPerWeek', value: next }], 'user', `Cardio sessions → ${next}/week`)
   }
   function stepMinutes(delta: number) {
     const next = Math.min(120, Math.max(15, profile!.minutesPerSession + delta))
@@ -86,22 +91,40 @@ export default function TrainingProgramCard({ onEditingChange }: { onEditingChan
 
       <h3>{tr('Weekly setup', 'Veckoupplägg')}</h3>
       <div className="setup-row">
-        <span>{tr('Training days / week', 'Träningsdagar / vecka')}</span>
+        <span>
+          {tr('Strength sessions / week', 'Styrkepass / vecka')}
+          <div className="muted small" style={{ fontWeight: 400 }}>
+            {tr(`Recommended ${recDays.strength[0]}–${recDays.strength[1]}`, `Rekommenderat ${recDays.strength[0]}–${recDays.strength[1]}`)}
+          </div>
+        </span>
         <div className="stepper activity-stepper">
-          <button type="button" aria-label={tr('Fewer training days', 'Färre träningsdagar')} onClick={() => stepDays(-1)}>
+          <button type="button" aria-label={tr('Fewer strength sessions', 'Färre styrkepass')} onClick={() => stepStrength(-1)}>
             −
           </button>
-          <input
-            type="number"
-            value={profile.daysPerWeek}
-            readOnly
-            aria-label={tr('Training days per week', 'Träningsdagar per vecka')}
-          />
-          <button type="button" aria-label={tr('More training days', 'Fler träningsdagar')} onClick={() => stepDays(1)}>
+          <input type="number" value={days.strength} readOnly aria-label={tr('Strength sessions per week', 'Styrkepass per vecka')} />
+          <button type="button" aria-label={tr('More strength sessions', 'Fler styrkepass')} onClick={() => stepStrength(1)}>
             +
           </button>
         </div>
       </div>
+      <div className="setup-row">
+        <span>
+          {tr('Cardio sessions / week', 'Konditionspass / vecka')}
+          <div className="muted small" style={{ fontWeight: 400 }}>
+            {tr(`Recommended ${recDays.cardio[0]}–${recDays.cardio[1]} · 0 = steps + finishers`, `Rekommenderat ${recDays.cardio[0]}–${recDays.cardio[1]} · 0 = steg + avslut`)}
+          </div>
+        </span>
+        <div className="stepper activity-stepper">
+          <button type="button" aria-label={tr('Fewer cardio sessions', 'Färre konditionspass')} onClick={() => stepCardio(-1)}>
+            −
+          </button>
+          <input type="number" value={days.cardio} readOnly aria-label={tr('Cardio sessions per week', 'Konditionspass per vecka')} />
+          <button type="button" aria-label={tr('More cardio sessions', 'Fler konditionspass')} onClick={() => stepCardio(1)}>
+            +
+          </button>
+        </div>
+      </div>
+      <WeekSummary strength={days.strength} cardio={days.cardio} />
       <div className="setup-row">
         <span>{tr('Minutes / session', 'Minuter / pass')}</span>
         <div className="stepper activity-stepper">
@@ -174,8 +197,8 @@ export default function TrainingProgramCard({ onEditingChange }: { onEditingChan
         </h3>
         <p className="muted small">
           {tr(
-            `${active.sessions.length} sessions · ${profile.daysPerWeek} training days a week. Edits you make here are saved to this profile.`,
-            `${active.sessions.length} pass · ${profile.daysPerWeek} träningsdagar i veckan. Ändringar du gör här sparas i den här profilen.`,
+            `${active.sessions.length} sessions · ${describeWeek(profile)}. Edits you make here are saved to this profile.`,
+            `${active.sessions.length} pass · ${describeWeek(profile)}. Ändringar du gör här sparas i den här profilen.`,
           )}
         </p>
         {active.sessions.map((s) => (

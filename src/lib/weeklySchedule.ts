@@ -1,5 +1,6 @@
 import { buildCardio } from './programs'
 import type { Profile, WorkoutProgram } from './types'
+import { trainingDays } from './trainingDays'
 import { L, tr } from '../i18n'
 
 /**
@@ -40,12 +41,15 @@ function dayLabel(n: number): string {
 }
 
 export function buildWeeklySchedule(profile: Profile, program: WorkoutProgram): WeeklySchedule {
-  const budget = profile.daysPerWeek
+  const td = trainingDays(profile)
+  const budget = td.total
   const cardio = buildCardio(profile)
 
-  // Strength gets first claim on the day budget. Titles are session names (keys,
-  // stay English); the focus is display text and goes through the glossary.
-  const strengthCount = Math.min(program.sessions.length, budget)
+  // Split budget: the user said how many strength and how many cardio sessions.
+  // Legacy budget (total only): strength gets first claim, cardio takes what is
+  // left. Titles are session names (keys, stay English); the focus is display
+  // text and goes through the glossary.
+  const strengthCount = Math.min(program.sessions.length, td.split ? td.strength : budget)
   const strengthDays: ScheduledDay[] = program.sessions.slice(0, strengthCount).map((s, i) => ({
     label: dayLabel(i + 1),
     kind: 'strength',
@@ -58,13 +62,13 @@ export function buildWeeklySchedule(profile: Profile, program: WorkoutProgram): 
   const rotationNote =
     remaining > 0
       ? tr(
-          `Your program has ${program.sessions.length} sessions but you train ${budget}×/week — the remaining session${
+          `Your program has ${program.sessions.length} sessions but you lift ${strengthCount}×/week — the remaining session${
             remaining > 1 ? 's' : ''
           } (${program.sessions
             .slice(strengthCount)
             .map((s) => s.name)
             .join(', ')}) rotate in on following weeks so everything gets trained.`,
-          `Ditt program har ${program.sessions.length} pass men du tränar ${budget}×/vecka — ${
+          `Ditt program har ${program.sessions.length} pass men du kör styrka ${strengthCount}×/vecka — ${
             remaining > 1 ? 'de återstående passen' : 'det återstående passet'
           } (${program.sessions
             .slice(strengthCount)
@@ -73,7 +77,7 @@ export function buildWeeklySchedule(profile: Profile, program: WorkoutProgram): 
         )
       : undefined
 
-  const freeDays = budget - strengthCount
+  const freeDays = td.split ? td.cardio : budget - strengthCount
 
   // Ideal conditioning from the goal, then fit it into whatever days are left.
   let hiitPerWeek = cardio.hiitSessionsPerWeek
@@ -99,7 +103,8 @@ export function buildWeeklySchedule(profile: Profile, program: WorkoutProgram): 
       slots--
     }
     let z2 = 0
-    while (slots > 0 && z2 < zone2PerWeek) {
+    // A chosen cardio day is always filled; a legacy leftover day only up to the ideal dose.
+    while (slots > 0 && (td.split || z2 < zone2PerWeek)) {
       scheduled.push({
         label: '',
         kind: 'cardio',

@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useAppStore } from '../../state/store'
+import { recommendedDays } from '../../lib/trainingDays'
 import type {
   ActivityLevel,
   DietPref,
@@ -28,7 +29,8 @@ interface Draft {
   medicalConditions: MedicalCondition[]
   injuries: Injury[]
   equipment: Equipment
-  daysPerWeek: number
+  strengthDaysPerWeek: number
+  cardioDaysPerWeek: number
   minutesPerSession: number
   sleepHours: string
   stressLevel: StressLevel
@@ -51,7 +53,8 @@ const INITIAL: Draft = {
   medicalConditions: [],
   injuries: [],
   equipment: 'full_gym',
-  daysPerWeek: 3,
+  strengthDaysPerWeek: 3,
+  cardioDaysPerWeek: 1,
   minutesPerSession: 60,
   sleepHours: '7',
   stressLevel: 'moderate',
@@ -87,6 +90,7 @@ export default function IntakeWizard() {
   const [d, setD] = useState<Draft>(INITIAL)
 
   const up = (patch: Partial<Draft>) => setD((prev) => ({ ...prev, ...patch }))
+  const rec = recommendedDays(d.fitnessLevel, d.goal)
 
   const stepValid = (): boolean => {
     if (step === 0) {
@@ -121,7 +125,9 @@ export default function IntakeWizard() {
       medicalConditions: d.medicalConditions,
       injuries: d.injuries,
       equipment: d.equipment,
-      daysPerWeek: d.daysPerWeek,
+      daysPerWeek: Math.min(7, d.strengthDaysPerWeek + d.cardioDaysPerWeek),
+      strengthDaysPerWeek: d.strengthDaysPerWeek,
+      cardioDaysPerWeek: d.cardioDaysPerWeek,
       minutesPerSession: d.minutesPerSession,
       sleepHours: Number(d.sleepHours),
       stressLevel: d.stressLevel,
@@ -280,15 +286,40 @@ export default function IntakeWizard() {
             />
           </Field>
           <Field
-            label={tr('Training days per week you can truly commit to', 'Träningsdagar per vecka du verkligen kan hålla')}
-            hint={tr('Pick the number that survives your worst week, not your best', 'Välj antalet som håller din sämsta vecka, inte din bästa')}
+            label={tr('Strength sessions per week', 'Styrkepass per vecka')}
+            hint={tr(
+              `Pick the number that survives your worst week, not your best. For a ${levelLabel(d.fitnessLevel)}: ${rec.strength[0]}–${rec.strength[1]}.`,
+              `Välj antalet som håller din sämsta vecka, inte din bästa. För en ${levelLabel(d.fitnessLevel)}: ${rec.strength[0]}–${rec.strength[1]}.`,
+            )}
           >
             <ChoiceRow
-              options={[2, 3, 4, 5, 6].map((n) => ({ v: String(n), label: tr(`${n} days`, `${n} dagar`) }))}
-              value={String(d.daysPerWeek)}
-              onSelect={(v) => up({ daysPerWeek: Number(v) })}
+              options={[1, 2, 3, 4, 5, 6].map((n) => ({
+                v: String(n),
+                label: `${n}`,
+                desc: n >= rec.strength[0] && n <= rec.strength[1] ? tr('recommended', 'rekommenderat') : undefined,
+              }))}
+              value={String(d.strengthDaysPerWeek)}
+              onSelect={(v) => up({ strengthDaysPerWeek: Number(v) })}
             />
           </Field>
+          <Field
+            label={tr('Cardio sessions per week', 'Konditionspass per vecka')}
+            hint={tr(
+              `Separate sessions: zone 2, intervals, runs, swims. 0 means steps and short finishers after lifting. For your goal: ${rec.cardio[0]}–${rec.cardio[1]}.`,
+              `Egna pass: zon 2, intervaller, löpning, simning. 0 betyder steg och korta avslut efter styrkan. För ditt mål: ${rec.cardio[0]}–${rec.cardio[1]}.`,
+            )}
+          >
+            <ChoiceRow
+              options={[0, 1, 2, 3, 4].map((n) => ({
+                v: String(n),
+                label: `${n}`,
+                desc: n >= rec.cardio[0] && n <= rec.cardio[1] ? tr('recommended', 'rekommenderat') : undefined,
+              }))}
+              value={String(d.cardioDaysPerWeek)}
+              onSelect={(v) => up({ cardioDaysPerWeek: Number(v) })}
+            />
+          </Field>
+          <WeekSummary strength={d.strengthDaysPerWeek} cardio={d.cardioDaysPerWeek} />
           <Field label={tr('Minutes per session', 'Minuter per pass')}>
             <ChoiceRow
               options={[30, 45, 60, 90].map((n) => ({ v: String(n), label: `${n} min` }))}
@@ -408,6 +439,29 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       {hint && <div className="hint">{hint}</div>}
     </div>
   )
+}
+
+/** Live total under the two day pickers: "= 5 training days · 2 rest days", with a nudge above 6. */
+export function WeekSummary({ strength, cardio }: { strength: number; cardio: number }) {
+  const total = strength + cardio
+  const rest = Math.max(0, 7 - total)
+  return (
+    <div className={`banner ${total >= 7 ? 'warn' : 'info'} small`} role="status">
+      {tr(
+        `= ${total} training day${total === 1 ? '' : 's'} a week · ${rest} rest day${rest === 1 ? '' : 's'}.`,
+        `= ${total} träningsdag${total === 1 ? '' : 'ar'} i veckan · ${rest} vilodag${rest === 1 ? '' : 'ar'}.`,
+      )}{' '}
+      {total >= 7
+        ? tr('Keep at least one full rest day — recovery is where the adaptation happens.', 'Ha minst en hel vilodag – återhämtningen är där anpassningen sker.')
+        : total > 5
+          ? tr('A big week. Fine if sleep and food keep up; drop a cardio day first if it slips.', 'En stor vecka. Funkar om sömn och mat hänger med; stryk en konditionsdag först om det spricker.')
+          : ''}
+    </div>
+  )
+}
+
+function levelLabel(level: FitnessLevel): string {
+  return level === 'beginner' ? tr('beginner', 'nybörjare') : level === 'intermediate' ? tr('intermediate lifter', 'medelvan') : tr('advanced lifter', 'avancerad')
 }
 
 function ChoiceRow({

@@ -5,6 +5,7 @@ import { buildWeeklySchedule } from '../weeklySchedule'
 import { addDaysIso, inWeek, isoWeek, nextSession, rollingCycle, startOfWeekIso } from '../trainWeek'
 import { bestSets, previousBests, topExerciseTrends } from '../trends'
 import { weeksSince } from '../../state/store'
+import { describeWeek } from '../trainingDays'
 
 /**
  * Everything the coach needs to know about how training has actually gone:
@@ -66,7 +67,7 @@ export function buildGrounding(input: GroundingInput): string {
     const vol = strength.reduce((a, w) => a + w.totalVolumeKg, 0)
     weekRows.push(`W${isoWeek(ws)}: ${strength.length} strength (${vol.toLocaleString('en-US')} kg volume)${other ? `, ${other} cardio/other` : ''}`)
   }
-  lines.push(`Sessions per week, newest first (planned ${profile.daysPerWeek}/week): ${weekRows.join(' · ')}.`)
+  lines.push(`Sessions per week, newest first (planned ${describeWeek(profile)}): ${weekRows.join(' · ')}.`)
 
   // --- Last sessions in detail
   const recent = completedWorkouts.slice(-6).reverse()

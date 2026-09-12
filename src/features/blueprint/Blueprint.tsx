@@ -8,6 +8,7 @@ import { buildOverview } from '../../lib/overview'
 import { buildRoadmap } from '../../lib/roadmap'
 import { buildWeeklySchedule } from '../../lib/weeklySchedule'
 import EvidencePanel from '../shared/EvidencePanel'
+import { describeWeek, trainingDays } from '../../lib/trainingDays'
 import { tr, L, dateLocale, useLocale } from '../../i18n'
 import type { Tab } from '../../App'
 import type { FitnessLevel, Goal } from '../../lib/types'
@@ -59,8 +60,9 @@ export default function Blueprint({ onNavigate }: { onNavigate: (t: Tab) => void
   const roadmap = buildRoadmap(profile)
   const currentWeek = weeksSince(planStartDate, todayIso()) + 1
   const cautions = buildCautions(profile)
-  const restMin = Math.max(1, 7 - profile.daysPerWeek - 1)
-  const restMax = 7 - profile.daysPerWeek
+  const days = trainingDays(profile)
+  const restMin = Math.max(1, 7 - days.total - 1)
+  const restMax = Math.max(1, 7 - days.total)
 
   return (
     <main>
@@ -165,10 +167,8 @@ export default function Blueprint({ onNavigate }: { onNavigate: (t: Tab) => void
         <p className="muted small">
           {L(program.splitName)} · {schedule.summaryLine}.{' '}
           {tr(
-            `This is exactly what fits your ${profile.daysPerWeek} training day${profile.daysPerWeek > 1 ? 's' : ''} — no more, no less.`,
-            profile.daysPerWeek > 1
-              ? `Det här är exakt vad som ryms på dina ${profile.daysPerWeek} träningsdagar — varken mer eller mindre.`
-              : 'Det här är exakt vad som ryms på din enda träningsdag — varken mer eller mindre.',
+            `Built for ${describeWeek(profile)} — no more, no less.`,
+            `Byggt för ${describeWeek(profile)} — varken mer eller mindre.`,
           )}
         </p>
         <p className="muted small why-schema">

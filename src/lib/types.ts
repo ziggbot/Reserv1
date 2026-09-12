@@ -38,7 +38,12 @@ export interface Profile {
   medicalConditions: MedicalCondition[]
   injuries: Injury[]
   equipment: Equipment
+  /** Total training days per week (strength + cardio). Kept for older profiles and code paths. */
   daysPerWeek: number
+  /** Strength sessions per week; set by the intake since the split-budget version. */
+  strengthDaysPerWeek?: number
+  /** Separate cardio/conditioning sessions per week (0 = steps + finishers only). */
+  cardioDaysPerWeek?: number
   minutesPerSession: number
   sleepHours: number
   stressLevel: StressLevel

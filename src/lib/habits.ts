@@ -1,5 +1,6 @@
 import type { FrictionFinding, Habit, HabitPlan, Profile } from './types'
 import { tr } from '../i18n'
+import { trainingDays } from './trainingDays'
 
 /**
  * Behavioral engine: diagnoses why consistency breaks from lifestyle answers,
@@ -102,8 +103,8 @@ export function buildHabitPlan(profile: Profile): HabitPlan {
   habits.push({
     id: 'train_scheduled',
     title: tr(
-      `Train on your ${profile.daysPerWeek} fixed days (10-min minimum counts)`,
-      `Träna på dina ${profile.daysPerWeek} fasta dagar (10 min räcker för att räknas)`,
+      `Train on your ${trainingDays(profile).total} fixed days (10-min minimum counts)`,
+      `Träna på dina ${trainingDays(profile).total} fasta dagar (10 min räcker för att räknas)`,
     ),
     anchor: tr(
       'When my training-day alarm goes off, I put on my workout clothes immediately.',
