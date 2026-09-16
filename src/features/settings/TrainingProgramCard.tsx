@@ -79,15 +79,6 @@ export default function TrainingProgramCard({ onEditingChange }: { onEditingChan
         )}
       </p>
 
-      <div className="banner info small">
-        <strong>
-          {tr('Recommended:', 'Rekommenderat:')} {L(rec.splitName)}
-        </strong>
-        <p style={{ margin: '4px 0 0' }}>{rec.rationale}</p>
-        <a href={rec.sourceUrl} target="_blank" rel="noopener noreferrer">
-          {rec.sourceName} ↗
-        </a>
-      </div>
 
       <h3>{tr('Weekly setup', 'Veckoupplägg')}</h3>
       <div className="setup-row">
