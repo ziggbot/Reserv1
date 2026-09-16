@@ -558,6 +558,8 @@ details.evidence summary { cursor: pointer; color: var(--text-dim); font-size: 0
 
 /* ---------- AI program ---------- */
 .ai-program.active { border-color: var(--ink); }
+.ai-program.embedded { border: none; padding: 0; margin: 6px 0 0; }
+.ai-program.embedded .program-overview { border-top: none; padding-top: 0; }
 .proposal ul.diff { list-style: none; padding-left: 0; margin: 4px 0 8px; font-size: 0.95rem; }
 .proposal ul.diff li { padding: 2px 0; border-bottom: 1.5px dashed var(--rule); }
 .proposal ul.diff li:last-child { border-bottom: none; }

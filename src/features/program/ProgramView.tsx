@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useAppStore } from '../../state/store'
 import TrainingProgramCard from '../settings/TrainingProgramCard'
-import AiProgramCard from './AiProgramCard'
 import type { Tab } from '../../App'
 import { tr, useLocale } from '../../i18n'
 
@@ -20,8 +19,7 @@ export default function ProgramView({ onNavigate }: { onNavigate: (t: Tab) => vo
           )}
         </div>
       </div>
-      {!editing && <AiProgramCard onNavigate={onNavigate} />}
-      <TrainingProgramCard onEditingChange={setEditing} />
+      <TrainingProgramCard onEditingChange={setEditing} onNavigate={onNavigate} />
       {!editing && <CustomExercisesCard />}
     </main>
   )

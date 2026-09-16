@@ -19,7 +19,7 @@ function newId(): string {
  * proposal with a diff, is applied with one tap, and is logged with the
  * coach's reasoning. Needs a Claude or OpenAI key.
  */
-export default function AiProgramCard({ onNavigate }: { onNavigate: (t: Tab) => void }) {
+export default function AiProgramCard({ onNavigate, embedded = false }: { onNavigate: (t: Tab) => void; embedded?: boolean }) {
   const {
     profile,
     aiProgram,
@@ -96,11 +96,17 @@ export default function AiProgramCard({ onNavigate }: { onNavigate: (t: Tab) => 
   }
 
   return (
-    <div className={`card ai-program ${active ? 'active' : ''}`}>
-      <h2>
-        🤖 {tr('Your AI coach’s program', 'Din AI-coachs program')}{' '}
-        {active && <span className="pill ok">{tr('in use', 'används')}</span>}
-      </h2>
+    <div className={`${embedded ? 'ai-program embedded' : 'card ai-program'} ${active ? 'active' : ''}`}>
+      {embedded ? (
+        <strong style={{ fontFamily: 'var(--hand)', fontSize: '1.25rem' }}>
+          🤖 {tr('Your AI coach’s program', 'Din AI-coachs program')}
+        </strong>
+      ) : (
+        <h2>
+          🤖 {tr('Your AI coach’s program', 'Din AI-coachs program')}{' '}
+          {active && <span className="pill ok">{tr('in use', 'används')}</span>}
+        </h2>
+      )}
       <p className="muted small">
         {tr(
           'A program written for you from your profile and training log, then kept current through dialogue: rate each session, flag what hurts, ask for changes. Every update comes as a proposal you approve, with the coach’s reasoning logged.',

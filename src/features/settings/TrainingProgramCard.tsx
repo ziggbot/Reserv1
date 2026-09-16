@@ -6,9 +6,14 @@ import { threeDayFullBody } from '../../lib/threeDayFullBody'
 import { ProgramEditor } from '../action/ActionView'
 import { describeWeek, recommendedDays, trainingDays } from '../../lib/trainingDays'
 import { WeekSummary } from '../intake/IntakeWizard'
+import AiProgramCard from '../program/AiProgramCard'
+import type { Tab } from '../../App'
 import { tr, L, useLocale } from '../../i18n'
 
-export default function TrainingProgramCard({ onEditingChange }: { onEditingChange?: (editing: boolean) => void } = {}) {
+export default function TrainingProgramCard({
+  onEditingChange,
+  onNavigate,
+}: { onEditingChange?: (editing: boolean) => void; onNavigate?: (t: Tab) => void } = {}) {
   useLocale()
   const { profile, customProgram, programChoice, aiProgram, setCustomProgram } = useAppStore()
   const [editing, setEditingState] = useState(false)
@@ -150,14 +155,13 @@ export default function TrainingProgramCard({ onEditingChange }: { onEditingChan
         <button
           type="button"
           className={`choice ${current === 'ai' ? 'selected' : ''}`}
-          disabled={!aiProgram}
-          onClick={() => aiProgram && commit('Use AI program', aiProgram, 'ai')}
+          onClick={() => commit(aiProgram ? 'Use AI program' : 'Choose AI program', aiProgram ?? customProgram, 'ai')}
         >
           {mark('ai')}🤖 {tr('AI coach’s program', 'AI-coachens program')}
           <span className="desc">
             {aiProgram
               ? tr(`${aiProgram.splitName} — written for you, updated through dialogue`, `${aiProgram.splitName} — skrivet för dig, uppdateras via dialog`)
-              : tr('Create it in the card above', 'Skapa det i kortet ovan')}
+              : tr('Written for you by the coach — pick to create it', 'Skrivs för dig av coachen — välj för att skapa det')}
           </span>
         </button>
         <button
@@ -194,6 +198,12 @@ export default function TrainingProgramCard({ onEditingChange }: { onEditingChan
         </button>
       </div>
 
+      {current === 'ai' ? (
+        <div className="program-overview">
+          <h3>{tr('Your program', 'Ditt program')}</h3>
+          <AiProgramCard embedded onNavigate={onNavigate ?? (() => {})} />
+        </div>
+      ) : (
       <div className="program-overview">
         <h3>
           {tr('Your program:', 'Ditt program:')} {L(active.splitName)}
@@ -222,6 +232,7 @@ export default function TrainingProgramCard({ onEditingChange }: { onEditingChan
           </div>
         ))}
       </div>
+      )}
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
         <button className="ghost" onClick={() => setEditing(true)}>
