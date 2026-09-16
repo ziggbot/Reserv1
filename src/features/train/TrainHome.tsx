@@ -153,18 +153,6 @@ export default function TrainHome({ onNavigate }: { onNavigate: (t: Tab) => void
             </li>
           ))}
         </ol>
-        <p className="muted small">
-          {schedule.summaryLine}.{' '}
-          {tr(
-            'The list resets the moment you finish the last session of the pass, whatever day it is.',
-            'Listan nollställs så fort du är klar med det sista passet i omgången, oavsett veckodag.',
-          )}
-        </p>
-        <p className="muted small">
-          👟 {tr(`${schedule.dailySteps.toLocaleString()} steps a day.`, `${schedule.dailySteps.toLocaleString()} steg per dag.`)}{' '}
-          {schedule.conditioning.note}
-        </p>
-        {schedule.rotationNote && <p className="muted small">🔁 {schedule.rotationNote}</p>}
         <p className="small">
           <button className="link" onClick={() => onNavigate('program')}>
             {tr('Change program or training days', 'Byt program eller träningsdagar')}

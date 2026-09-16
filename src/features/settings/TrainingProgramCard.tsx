@@ -5,6 +5,7 @@ import { recommendProgram } from '../../lib/programMatrix'
 import { threeDayFullBody } from '../../lib/threeDayFullBody'
 import { ProgramEditor } from '../action/ActionView'
 import { describeWeek, recommendedDays, trainingDays } from '../../lib/trainingDays'
+import { buildWeeklySchedule } from '../../lib/weeklySchedule'
 import { WeekSummary } from '../intake/IntakeWizard'
 import AiProgramCard from '../program/AiProgramCard'
 import type { Tab } from '../../App'
@@ -67,6 +68,7 @@ export default function TrainingProgramCard({
 
   const current = programChoice ?? (customProgram ? 'custom' : 'recommended')
   const active = customProgram ?? rec.program
+  const schedule = buildWeeklySchedule(profile, active)
   const mark = (id: string) =>
     current === id ? (
       <span className="check" aria-label={tr('selected', 'valt')}>
@@ -233,6 +235,22 @@ export default function TrainingProgramCard({
         ))}
       </div>
       )}
+
+      <div className="week-notes">
+        <h3>{tr('How your week works', 'Så fungerar din vecka')}</h3>
+        <p className="muted small">
+          {schedule.summaryLine}.{' '}
+          {tr(
+            'The checklist on the Train page resets the moment you finish the last session of the pass, whatever day it is.',
+            'Checklistan på Träna-sidan nollställs så fort du är klar med det sista passet i omgången, oavsett veckodag.',
+          )}
+        </p>
+        <p className="muted small">
+          👟 {tr(`${schedule.dailySteps.toLocaleString()} steps a day.`, `${schedule.dailySteps.toLocaleString()} steg per dag.`)}{' '}
+          {schedule.conditioning.note}
+        </p>
+        {schedule.rotationNote && <p className="muted small">🔁 {schedule.rotationNote}</p>}
+      </div>
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
         <button className="ghost" onClick={() => setEditing(true)}>

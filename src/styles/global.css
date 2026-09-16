@@ -49,6 +49,7 @@
   --text-dim: #6b6763;
   --accent: #1c1b1a;
   --accent-soft: #efede7;
+  --fire: #ffc21a;
   --ok: #2f6b3a;
   --ok-soft: #e9f3ea;
   --warn: #8a5a12;
@@ -235,8 +236,8 @@ button.link {
 .big-cta {
   width: min(100%, 360px);
   min-height: 92px;
-  background: var(--ink);
-  color: #fff;
+  background: var(--fire);
+  color: var(--ink);
   border: 2px solid var(--ink);
   border-radius: var(--sketch);
   font-family: var(--hand);
@@ -252,6 +253,7 @@ button.link {
 .big-cta:hover { transform: rotate(-1deg) translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); }
 .big-cta:active { transform: rotate(-1deg) translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
 .big-cta.continue { background: #fff; color: var(--ink); }
+.week-notes { margin-top: 14px; border-top: 1.5px dashed var(--rule); padding-top: 8px; }
 .hero .next-up { margin-top: 20px; font-size: 1.15rem; }
 .hero .next-up .name { font-family: var(--hand); font-size: 1.7rem; font-weight: 700; display: block; line-height: 1.15; }
 .hero .next-up .meta { color: var(--text-dim); font-size: 0.98rem; }

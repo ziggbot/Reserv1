@@ -131,12 +131,15 @@ export function buildWeeklySchedule(profile: Profile, program: WorkoutProgram): 
   }
 
   const steps = cardio.stepsTarget.toLocaleString()
-  const hiitPrefix = hiitPerWeek > 0 ? `${hiitPerWeek}× HIIT + ` : ''
+  // Only mention the conditioning types that actually got a day.
+  const condParts = (hiit: string, z2: string, sep: string) =>
+    [hiitPerWeek > 0 ? `${hiitPerWeek}× ${hiit}` : '', zone2PerWeek > 0 ? `${zone2PerWeek}× ${z2}` : ''].filter(Boolean).join(sep)
+  const hiitWarning = hiitPerWeek > 0
   const note =
     placement === 'separate'
       ? tr(
-          `${hiitPrefix}${zone2PerWeek}× zone-2 fit into your ${budget}-day week. Never put HIIT the day before heavy legs.`,
-          `${hiitPrefix}${zone2PerWeek}× zon 2 ryms i din ${budget}-dagarsvecka. Lägg aldrig HIIT dagen före tunga ben.`,
+          `${condParts('HIIT', 'zone-2', ' + ')} fit into your ${budget}-day week.${hiitWarning ? ' Never put HIIT the day before heavy legs.' : ''}`,
+          `${condParts('HIIT', 'zon 2', ' + ')} ryms i din ${budget}-dagarsvecka.${hiitWarning ? ' Lägg aldrig HIIT dagen före tunga ben.' : ''}`,
         )
       : tr(
           `With ${budget} training day${budget > 1 ? 's' : ''} there’s no room for a separate cardio day — that’s fine. Add an optional 8–10 min conditioning finisher after a lift when you have energy, and let your ${steps} daily steps be your main conditioning.`,
@@ -146,10 +149,7 @@ export function buildWeeklySchedule(profile: Profile, program: WorkoutProgram): 
   const strengthLabel = tr(`${strengthCount}× strength`, `${strengthCount}× styrka`)
   const condLabel =
     placement === 'separate'
-      ? tr(
-          ` · ${hiitPerWeek > 0 ? `${hiitPerWeek}× HIIT · ` : ''}${zone2PerWeek}× zone-2`,
-          ` · ${hiitPerWeek > 0 ? `${hiitPerWeek}× HIIT · ` : ''}${zone2PerWeek}× zon 2`,
-        )
+      ? tr(` · ${condParts('HIIT', 'zone-2', ' · ')}`, ` · ${condParts('HIIT', 'zon 2', ' · ')}`)
       : tr(' · conditioning as finisher', ' · kondition som avslut')
   const summaryLine = `${strengthLabel}${condLabel} · ${steps} ${tr('steps/day', 'steg/dag')}`
 
