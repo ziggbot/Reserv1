@@ -6,10 +6,9 @@ import { buildHabitPlan, currentStreak } from '../../lib/habits'
 import { topExerciseTrends } from '../../lib/trends'
 import { trainingDays } from '../../lib/trainingDays'
 import { resolvePrimaryCoach } from '../../lib/coach'
-import { buildGrounding, groundingKey } from '../../lib/coach/grounding'
+import { groundingKey } from '../../lib/coach/grounding'
+import { buildCoachContext } from '../../lib/coach/context'
 import { requestAssessment } from '../../lib/coach/assessment'
-import { defaultProgram } from '../../lib/threeDayFullBody'
-import { buildWeeklySchedule } from '../../lib/weeklySchedule'
 import { isoWeek, startOfWeekIso, addDaysIso } from '../../lib/trainWeek'
 import EvidencePanel from '../shared/EvidencePanel'
 import { tr, L, fmtDate, dateLocale, useLocale } from '../../i18n'
@@ -55,7 +54,6 @@ export default function ProgressView() {
     workoutLog,
     habitChecks,
     planHistory,
-    customProgram,
     coachSettings,
     coachApiKeys,
     coachAssessment,
@@ -77,13 +75,7 @@ export default function ProgressView() {
     setAssessing(true)
     setAssessError(null)
     try {
-      const program = defaultProgram(profile, customProgram)
-      const text = await requestAssessment(llm, {
-        profile,
-        program,
-        scheduleSummary: buildWeeklySchedule(profile, program).summaryLine,
-        grounding: buildGrounding({ profile, program, completedWorkouts, weighIns, habitChecks, planStartDate, planHistory, today: today0 }),
-      })
+      const text = await requestAssessment(llm, buildCoachContext()!)
       setCoachAssessment({ text, at: new Date().toISOString(), key: dataKey, provider: llm.id })
     } catch (e) {
       setAssessError(e instanceof Error ? e.message : 'failed')

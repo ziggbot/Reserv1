@@ -102,6 +102,17 @@ function detect(text: string, context: CoachContext): { text: string; changes: P
   }
   if (notes.length > 0 && changes.length > 0) reply = `${notes.join(' ')} ${reply}`
 
+  // Program building / rewriting — the built-in coach cannot do this.
+  if (changes.length === 0 && /((bygg|skapa|build|rebuild|write|skriv).{0,25}program|program.{0,25}(åt mig|for me|till mig)|byt ut|swap out|mer armar|more arms)/.test(t)) {
+    return {
+      text: tr(
+        'Building or rewriting a whole program needs the AI coach: add a Claude or OpenAI key under Settings → AI training partner, then ask again. Until then, edit the program under More → Training program.',
+        'Att bygga eller skriva om ett helt program kräver AI-coachen: lägg in en Claude- eller OpenAI-nyckel under Inställningar → AI-träningspartner och fråga igen. Tills dess kan du redigera programmet under Mer → Träningsprogram.',
+      ),
+      changes: [],
+    }
+  }
+
   return { text: reply, changes, summary }
 }
 

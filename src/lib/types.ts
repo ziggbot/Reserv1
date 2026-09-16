@@ -181,6 +181,16 @@ export interface ActiveWorkout {
 
 export type ActivityCategory = 'strength' | 'cardio' | 'endurance' | 'stretch'
 
+export type WorkoutEffort = 'too_easy' | 'right' | 'too_hard'
+
+/** What the user said after the session — the coach's main adaptation signal. */
+export interface WorkoutFeedback {
+  effort: WorkoutEffort
+  /** Exercises that caused pain or felt wrong. */
+  flagged: string[]
+  note?: string
+}
+
 export interface CompletedWorkout {
   date: string // ISO yyyy-mm-dd
   sessionName: string
@@ -189,6 +199,7 @@ export interface CompletedWorkout {
   exercises: LoggedExercise[]
   totalVolumeKg: number
   totalSets: number
+  feedback?: WorkoutFeedback
 }
 
 export interface ActivityProposal {

@@ -6,6 +6,7 @@ import type {
   ActivityCategory,
   ActivityProposal,
   CompletedWorkout,
+  WorkoutEffort,
   WorkoutProgram,
   WorkoutSession,
 } from '../../lib/types'
@@ -496,6 +497,17 @@ export function WorkoutSummary({
   history: CompletedWorkout[]
   onClose: () => void
 }) {
+  const setWorkoutFeedback = useAppStore((s) => s.setWorkoutFeedback)
+  const [effort, setEffort] = useState<WorkoutEffort | null>(workout.feedback?.effort ?? null)
+  const [flagged, setFlagged] = useState<string[]>(workout.feedback?.flagged ?? [])
+  const [note, setNote] = useState(workout.feedback?.note ?? '')
+  const saveFeedback = (next: { effort?: WorkoutEffort | null; flagged?: string[]; note?: string }) => {
+    const e = next.effort === undefined ? effort : next.effort
+    const f = next.flagged ?? flagged
+    const n = next.note ?? note
+    if (!e) return
+    setWorkoutFeedback(workout.date, workout.sessionName, { effort: e, flagged: f, note: n.trim() || undefined })
+  }
   const previousBest = (exName: string): number => {
     let best = 0
     for (const w of history) {
@@ -542,10 +554,79 @@ export function WorkoutSummary({
             )
           })}
         </ul>
+        <h2>{tr('How was it?', 'Hur kändes det?')}</h2>
+        <p className="muted small">
+          {tr('Your coach uses this to tune the next sessions.', 'Din coach använder det här för att justera kommande pass.')}
+        </p>
+        <div className="chip-row" role="radiogroup" aria-label={tr('Session effort', 'Passets ansträngning')}>
+          {(
+            [
+              ['too_easy', tr('Too easy', 'För lätt')],
+              ['right', tr('About right', 'Lagom')],
+              ['too_hard', tr('Too hard', 'För tungt')],
+            ] as [WorkoutEffort, string][]
+          ).map(([v, label]) => (
+            <button
+              key={v}
+              role="radio"
+              aria-checked={effort === v}
+              className={`chip ${effort === v ? 'active' : ''}`}
+              onClick={() => {
+                setEffort(v)
+                saveFeedback({ effort: v })
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {workout.exercises.length > 0 && (
+          <>
+            <p className="muted small" style={{ marginTop: 8 }}>
+              {tr('Anything that hurt or felt wrong? Tap it.', 'Något som gjorde ont eller kändes fel? Tryck på det.')}
+            </p>
+            <div className="chip-row">
+              {workout.exercises.map((ex) => {
+                const on = flagged.includes(ex.name)
+                return (
+                  <button
+                    key={ex.name}
+                    className={`chip small ${on ? 'active' : ''}`}
+                    aria-pressed={on}
+                    onClick={() => {
+                      const next = on ? flagged.filter((n) => n !== ex.name) : [...flagged, ex.name]
+                      setFlagged(next)
+                      saveFeedback({ flagged: next })
+                    }}
+                  >
+                    {on ? '⚠ ' : ''}
+                    {L(ex.name)}
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
+        <div className="new-exercise">
+          <input
+            type="text"
+            value={note}
+            placeholder={tr('Note for the coach (optional)', 'Notering till coachen (valfritt)')}
+            aria-label={tr('Feedback note', 'Feedbacknotering')}
+            onChange={(e) => setNote(e.target.value)}
+            onBlur={() => saveFeedback({ note })}
+          />
+        </div>
         <p className="muted small">
           {tr('Volume, strength trend and your weight curve live under Progress.', 'Volym, styrketrend och din viktkurva finns under Utveckling.')}
         </p>
-        <button className="primary" onClick={onClose}>
+        <button
+          className="primary"
+          onClick={() => {
+            saveFeedback({ note })
+            onClose()
+          }}
+        >
           {tr('Done', 'Klar')}
         </button>
       </div>

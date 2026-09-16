@@ -1,4 +1,5 @@
 import type { Goal, Profile, WorkoutProgram } from '../types'
+import type { AiProgramPayload } from './programGen'
 
 /** A single, reversible change the coach proposes to the user's plan. */
 export type PlanChange =
@@ -9,6 +10,7 @@ export type PlanChange =
   | { type: 'goal'; value: Goal }
   | { type: 'goalWeightKg'; value: number }
   | { type: 'addExercise'; sessionIndex: number; name: string }
+  | { type: 'programUpdate'; program: AiProgramPayload; rationale?: string }
   | { type: 'note'; text: string }
 
 export interface PlanProposal {
@@ -31,6 +33,14 @@ export interface CoachContext {
   profile: Profile
   program: WorkoutProgram
   scheduleSummary: string
+  /** Which option under Choose a program is active ('ai' = the coach's own program). */
+  programChoice?: string
+  /** Built-in exercises usable with the user's equipment, canonical names. */
+  libraryNames?: string[]
+  /** Exercises the user added themselves. */
+  customExercises?: string[]
+  /** Recent AI-program change log lines, newest first. */
+  aiProgramLog?: string[]
   /** Digest of the training log (see grounding.ts); omitted only for connection tests. */
   grounding?: string
 }
@@ -57,6 +67,8 @@ export function describeChange(c: PlanChange): string {
       return `Goal weight → ${c.value} kg`
     case 'addExercise':
       return `Add “${c.name}” to session ${c.sessionIndex + 1}`
+    case 'programUpdate':
+      return `Program: ${c.program.splitName} (${c.program.sessions.length} sessions)`
     case 'note':
       return `Note: ${c.text}`
   }

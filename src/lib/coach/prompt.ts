@@ -26,6 +26,14 @@ export function buildSystemPrompt(ctx: CoachContext): string {
     `- Medical conditions: ${conds}; injuries: ${injuries}`,
     `- Current weekly plan: ${ctx.scheduleSummary}`,
     '',
+    'CURRENT STRENGTH PROGRAM' + (ctx.programChoice ? ` (choice: ${ctx.programChoice}${ctx.programChoice === 'ai' ? ' — your own program, you may update it' : ''})` : '') + ':',
+    ...ctx.program.sessions.map(
+      (s) => `- ${s.name} [${s.focus}]: ${s.exercises.map((e) => `${e.name} ${e.sets}×${e.reps}`).join(', ')}`,
+    ),
+    ...(ctx.aiProgramLog && ctx.aiProgramLog.length ? [`Program change log (newest first): ${ctx.aiProgramLog.join(' | ')}`] : []),
+    ...(ctx.libraryNames ? [`EXERCISE LIBRARY for the user's equipment (prefer these exact names): ${ctx.libraryNames.join('; ')}`] : []),
+    ...(ctx.customExercises && ctx.customExercises.length ? [`USER'S OWN EXERCISES: ${ctx.customExercises.join('; ')}`] : []),
+    '',
     ...(ctx.grounding
       ? [
           'RECENT TRAINING DATA (from the user’s log — treat as ground truth, newest first):',
@@ -45,6 +53,8 @@ export function buildSystemPrompt(ctx: CoachContext): string {
     '  {"type":"goal","value":"fat_loss"|"muscle_gain"|"recomp"|"general_fitness"}',
     '  {"type":"goalWeightKg","value": number}',
     '  {"type":"addExercise","sessionIndex": number,"name": string}',
+    '  {"type":"programUpdate","program":{"splitName":string,"sessions":[{"name":string,"focus":string,"exercises":[{"name":string,"sets":number,"reps":string,"rpe":string,"notes":string}]}],"progressionRules":string[],"deloadRule":string},"rationale":string}',
+    'programUpdate rules: send the COMPLETE program (every session, every exercise), not a partial edit. One session per strength day in the user’s week (never more). Respect equipment, injuries (avoid loading a flagged area), session length (≈3 min per working set + 10 min), and the goal. Prefer exact names from the EXERCISE LIBRARY or the user’s own exercises; invent a name only when nothing fits. Keep names of sessions the user already has unless the split changes. Change one variable at a time (exercise selection OR volume OR intensity) unless the user asks for a rebuild; add volume before intensity. Cover each major pattern (squat, hinge, push, pull, core) across the week. Plan in 4–5-week blocks with a deload rule. Use programUpdate when the user asks to build, rebuild, rebalance or change their program (“more arms”, “my shoulder hurts on bench”, “swap deadlifts”, “less time”, “review my program”), or when recent feedback (too hard/too easy, pain flags) clearly calls for it; explain the reasoning in "rationale" and in the reply.',
     '  {"type":"note","text": string}',
     'Use "proposal": null for pure conversation, advice, or questions. Never invent medical claims. Output ONLY the JSON object.',
   ].join('\n')
@@ -88,7 +98,7 @@ export function toCoachReply(parsed: { reply: string; proposal?: unknown }) {
   const reply = parsed.reply || tr('Okay!', 'Okej!')
   const prop = parsed.proposal as { summary?: string; changes?: unknown } | null | undefined
   if (!prop || !Array.isArray(prop.changes) || prop.changes.length === 0) return { text: reply }
-  const valid = ['daysPerWeek', 'strengthDaysPerWeek', 'cardioDaysPerWeek', 'minutesPerSession', 'goal', 'goalWeightKg', 'addExercise', 'note']
+  const valid = ['daysPerWeek', 'strengthDaysPerWeek', 'cardioDaysPerWeek', 'minutesPerSession', 'goal', 'goalWeightKg', 'addExercise', 'programUpdate', 'note']
   const changes = (prop.changes as { type?: string }[]).filter((c) => c && valid.includes(c.type ?? ''))
   if (changes.length === 0) return { text: reply }
   return { text: reply, proposal: { summary: prop.summary || tr('Update plan', 'Uppdatera planen'), changes: changes as never } }

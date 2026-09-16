@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
 import { SEED_MEMORY } from '../lib/threeDayFullBody'
 import { trainingDays, withTrainingDays } from '../lib/trainingDays'
+import { toWorkoutProgram } from '../lib/coach/programGen'
 import { rawStorage } from './storage'
 import { getSession, sessionDecrypt, sessionEncrypt } from './session'
 import type { ChatMessage, PlanChange } from '../lib/coach/types'
@@ -12,6 +13,7 @@ import type {
   CompletedWorkout,
   Profile,
   WeighIn,
+  WorkoutFeedback,
   WorkoutProgram,
   WorkoutSession,
 } from '../lib/types'
@@ -64,6 +66,8 @@ type AppData = Pick<
   | 'coachApiKeys'
   | 'coachAssessment'
   | 'customExercises'
+  | 'aiProgram'
+  | 'aiProgramLog'
 >
 
 const INITIAL_DATA: AppData = {
@@ -83,6 +87,8 @@ const INITIAL_DATA: AppData = {
   coachApiKeys: {},
   coachAssessment: null,
   customExercises: [],
+  aiProgram: null,
+  aiProgramLog: [],
 }
 
 export interface WorkoutLogEntry {
@@ -111,6 +117,10 @@ interface AppState {
   coachAssessment: CoachAssessment | null
   /** Exercises the user added themselves; offered in the program editor next to the built-in library. */
   customExercises: string[]
+  /** The AI coach's own program for this person, kept even while another program is selected. */
+  aiProgram: WorkoutProgram | null
+  /** Newest first: what the coach changed and why. */
+  aiProgramLog: AiProgramLogEntry[]
 
   setProfile: (p: Profile) => void
   resetAll: () => void
@@ -136,6 +146,15 @@ interface AppState {
   setCoachAssessment: (a: CoachAssessment | null) => void
   addCustomExercise: (name: string) => string | null
   removeCustomExercise: (name: string) => void
+  /** Attach post-session feedback to the most recent matching workout. */
+  setWorkoutFeedback: (date: string, sessionName: string, feedback: WorkoutFeedback) => void
+}
+
+export interface AiProgramLogEntry {
+  ts: string
+  summary: string
+  rationale?: string
+  unknownExercises?: string[]
 }
 
 export interface CoachAssessment {
@@ -350,6 +369,9 @@ export const useAppStore = create<AppState>()(
           }
           let profile = s.profile
           let customProgram = s.customProgram
+          let aiProgram = s.aiProgram
+          let aiProgramLog = s.aiProgramLog
+          let programChoice = s.programChoice
           for (const c of changes) {
             if (!profile && c.type !== 'note') continue
             switch (c.type) {
@@ -392,12 +414,25 @@ export const useAppStore = create<AppState>()(
                 }
                 break
               }
+              case 'programUpdate': {
+                if (!profile) break
+                const built = toWorkoutProgram(c.program, profile, s.customExercises)
+                if (!built) break
+                aiProgram = built.program
+                customProgram = built.program
+                programChoice = 'ai'
+                aiProgramLog = [
+                  { ts: new Date().toISOString(), summary: description, rationale: c.rationale, unknownExercises: built.unknownExercises },
+                  ...aiProgramLog,
+                ].slice(0, 30)
+                break
+              }
               case 'note':
                 break // notes are journal-only
             }
           }
-          const programChoice = customProgram !== s.customProgram ? 'custom' : s.programChoice
-          return { profile, customProgram, programChoice, planHistory: [revision, ...s.planHistory].slice(0, 50) }
+          if (programChoice !== 'ai' && customProgram !== s.customProgram) programChoice = 'custom'
+          return { profile, customProgram, programChoice, aiProgram, aiProgramLog, planHistory: [revision, ...s.planHistory].slice(0, 50) }
         }),
 
       setCoachSettings: (patch) => set((s) => ({ coachSettings: { ...s.coachSettings, ...patch } })),
@@ -415,6 +450,21 @@ export const useAppStore = create<AppState>()(
 
       removeCustomExercise: (name) =>
         set((s) => ({ customExercises: s.customExercises.filter((n) => n !== name) })),
+
+      setWorkoutFeedback: (date, sessionName, feedback) =>
+        set((s) => {
+          let idx = -1
+          for (let i = s.completedWorkouts.length - 1; i >= 0; i--) {
+            const w = s.completedWorkouts[i]
+            if (w.date === date && w.sessionName === sessionName) {
+              idx = i
+              break
+            }
+          }
+          if (idx === -1) return s
+          const completedWorkouts = s.completedWorkouts.map((w, i) => (i === idx ? { ...w, feedback } : w))
+          return { completedWorkouts }
+        }),
 
       setCoachApiKey: (provider, key) =>
         set((s) => {

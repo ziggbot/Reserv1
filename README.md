@@ -49,6 +49,22 @@ user's own imported Swedish program passes through untouched.
 Either host serves the app over HTTPS with a manifest and service worker, so it installs as a
 home-screen app on iPhone (Share → Add to Home Screen) and Android (Install app).
 
+## The AI coach's program
+
+With a Claude or OpenAI key (More → Settings → AI training partner), the coach can write a program
+for this person and keep it current through dialogue (More → Training program → "Your AI coach's
+program"):
+
+- **Create** builds one session per strength day from the profile, equipment, injuries and goal.
+- **Feedback loop**: every saved workout asks "too easy / about right / too hard", lets you flag
+  exercises that hurt, and takes a note. That, plus the training-log digest (`lib/coach/grounding.ts`),
+  is in the coach's system prompt.
+- **Review against my log** and free-text requests ("more arms", "bench hurts my shoulder") return a
+  `programUpdate` proposal: the complete program, shown as a diff, applied with one tap and logged
+  with the coach's rationale. The prompt asks for one variable at a time, volume before intensity,
+  4–5-week blocks with a deload, and library exercise names (invented names are reported).
+- The AI program is one choice next to the presets and survives switching away and back.
+
 ## Cloud sync (Supabase)
 
 Optional. Everything works offline on one device; sign in under More → Settings → Cloud sync and

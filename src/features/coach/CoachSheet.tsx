@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { useAppStore, todayIso } from '../../state/store'
+import { useAppStore } from '../../state/store'
 import { defaultProgram } from '../../lib/threeDayFullBody'
-import { buildWeeklySchedule } from '../../lib/weeklySchedule'
 import { resolveCoach } from '../../lib/coach'
-import { buildGrounding } from '../../lib/coach/grounding'
+import { buildCoachContext } from '../../lib/coach/context'
+import { programDiff, toWorkoutProgram } from '../../lib/coach/programGen'
 import { describeChange, type ChatMessage, type PlanProposal } from '../../lib/coach/types'
 import PlanHistory from './PlanHistory'
 import { tr } from '../../i18n'
@@ -18,11 +18,7 @@ export default function CoachSheet({ onClose }: { onClose: () => void }) {
   const {
     profile,
     customProgram,
-    completedWorkouts,
-    weighIns,
-    habitChecks,
-    planStartDate,
-    planHistory,
+    customExercises,
     coachMessages,
     coachSettings,
     coachApiKeys,
@@ -50,21 +46,7 @@ export default function CoachSheet({ onClose }: { onClose: () => void }) {
     const userMsg: ChatMessage = { id: newId(), role: 'user', text, ts: new Date().toISOString() }
     addCoachMessage(userMsg)
     setBusy(true)
-    const context = {
-      profile: profile!,
-      program,
-      scheduleSummary: buildWeeklySchedule(profile!, program).summaryLine,
-      grounding: buildGrounding({
-        profile: profile!,
-        program,
-        completedWorkouts,
-        weighIns,
-        habitChecks,
-        planStartDate,
-        planHistory,
-        today: todayIso(),
-      }),
-    }
+    const context = buildCoachContext()!
     let reply
     try {
       reply = await coach.reply([...coachMessages, userMsg], context)
@@ -124,6 +106,7 @@ export default function CoachSheet({ onClose }: { onClose: () => void }) {
                   <li>{tr('“Only 30 minutes per session”', '”Bara 30 minuter per pass”')}</li>
                   <li>{tr('“Switch my goal to building muscle”', '”Byt mitt mål till att bygga muskler”')}</li>
                   <li>{tr('“My knee hurts”', '”Mitt knä gör ont”')}</li>
+                  <li>{tr('“Build me a program” · “More arms” · “Swap the deadlifts”', '”Bygg ett program åt mig” · ”Mer armar” · ”Byt ut marklyften”')}</li>
                 </ul>
               </div>
             )}
@@ -135,7 +118,20 @@ export default function CoachSheet({ onClose }: { onClose: () => void }) {
                     <strong>{m.proposal.summary}</strong>
                     <ul>
                       {m.proposal.changes.map((c, i) => (
-                        <li key={i}>{describeChange(c)}</li>
+                        <li key={i}>
+                          {describeChange(c)}
+                          {c.type === 'programUpdate' && (
+                            <ul className="diff">
+                              {(() => {
+                                const built = toWorkoutProgram(c.program, profile, customExercises)
+                                return built
+                                  ? programDiff(m.proposalApplied ? null : program, built.program).map((line, j) => <li key={j}>{line}</li>)
+                                  : [<li key="bad">{tr('Could not read the program', 'Kunde inte läsa programmet')}</li>]
+                              })()}
+                              {c.rationale && <li className="muted">{c.rationale}</li>}
+                            </ul>
+                          )}
+                        </li>
                       ))}
                     </ul>
                     {m.proposalApplied ? (

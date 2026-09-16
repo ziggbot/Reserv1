@@ -86,8 +86,23 @@ export function buildGrounding(input: GroundingInput): string {
         const pr = b.weightKg > 0 && b.weightKg > (prev.get(b.name) ?? 0) ? ' PR' : ''
         return `${b.name} ${b.weightKg}kg×${b.reps}${pr}`
       })
-      lines.push(`- ${w.date} ${w.sessionName}: ${w.durationMin} min, ${w.totalSets} sets, ${w.totalVolumeKg.toLocaleString('en-US')} kg. Best sets: ${sets.join('; ')}`)
+      const fb = w.feedback
+        ? ` Felt: ${w.feedback.effort.replace('_', ' ')}${w.feedback.flagged.length ? `; pain/issue on ${w.feedback.flagged.join(', ')}` : ''}${w.feedback.note ? `; note: "${w.feedback.note}"` : ''}.`
+        : ''
+      lines.push(`- ${w.date} ${w.sessionName}: ${w.durationMin} min, ${w.totalSets} sets, ${w.totalVolumeKg.toLocaleString('en-US')} kg. Best sets: ${sets.join('; ')}.${fb}`)
     }
+  }
+
+  // --- Feedback pattern across the last 8 strength sessions
+  const recentFb = completedWorkouts.slice(-8).map((w) => w.feedback).filter((f): f is NonNullable<typeof f> => !!f)
+  if (recentFb.length > 0) {
+    const count = (e: string) => recentFb.filter((f) => f.effort === e).length
+    const flagged = [...new Set(recentFb.flatMap((f) => f.flagged))]
+    lines.push(
+      `Session feedback (last ${recentFb.length} rated): ${count('too_easy')} too easy, ${count('right')} about right, ${count('too_hard')} too hard` +
+        (flagged.length ? `; repeatedly flagged exercises: ${flagged.join(', ')}` : '') +
+        '.',
+    )
   }
 
   // --- Strength trends

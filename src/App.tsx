@@ -127,7 +127,7 @@ export default function App() {
       {tab === 'nutrition' && <NutritionView />}
       {tab === 'longevity' && <LongevityView />}
       {tab === 'habits' && <HabitsView />}
-      {tab === 'program' && <ProgramView />}
+      {tab === 'program' && <ProgramView onNavigate={setTab} />}
       {tab === 'settings' && <SettingsView onLock={lock} />}
       <Disclaimer />
       {!workoutTakeover && <CoachFab />}

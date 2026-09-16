@@ -208,7 +208,11 @@ const MOBILITY: Record<string, string[]> = {
   full: ['World’s greatest stretch ×5/side', 'Cat–camel ×10', 'Deep squat hold 1 min'],
 }
 
-function mobilityFor(sessionName: string): string[] {
+export function defaultWarmup(): string[] {
+  return [...WARMUP]
+}
+
+export function mobilityFor(sessionName: string): string[] {
   const n = sessionName.toLowerCase()
   if (n.includes('lower') || n.includes('legs')) return MOBILITY.lower
   if (n.includes('upper') || n.includes('push') || n.includes('pull')) return MOBILITY.upper

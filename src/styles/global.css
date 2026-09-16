@@ -556,6 +556,13 @@ details.evidence summary { cursor: pointer; color: var(--text-dim); font-size: 0
 .icon-btn { padding: 6px 10px !important; font-size: 1rem !important; }
 .small-btn { padding: 5px 12px !important; font-size: 1.05rem !important; margin-top: 6px; }
 
+/* ---------- AI program ---------- */
+.ai-program.active { border-color: var(--ink); }
+.proposal ul.diff { list-style: none; padding-left: 0; margin: 4px 0 8px; font-size: 0.95rem; }
+.proposal ul.diff li { padding: 2px 0; border-bottom: 1.5px dashed var(--rule); }
+.proposal ul.diff li:last-child { border-bottom: none; }
+.chip.small { font-size: 1rem; padding: 3px 10px; }
+
 /* ---------- Custom exercises ---------- */
 .editor-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
 .new-exercise { display: flex; gap: 8px; align-items: stretch; margin: 8px 0 4px; }

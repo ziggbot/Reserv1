@@ -10,7 +10,7 @@ import { tr, L, useLocale } from '../../i18n'
 
 export default function TrainingProgramCard({ onEditingChange }: { onEditingChange?: (editing: boolean) => void } = {}) {
   useLocale()
-  const { profile, customProgram, programChoice, setCustomProgram } = useAppStore()
+  const { profile, customProgram, programChoice, aiProgram, setCustomProgram } = useAppStore()
   const [editing, setEditingState] = useState(false)
   const setEditing = (v: boolean) => {
     setEditingState(v)
@@ -158,6 +158,19 @@ export default function TrainingProgramCard({ onEditingChange }: { onEditingChan
         </button>
         <button
           type="button"
+          className={`choice ${current === 'ai' ? 'selected' : ''}`}
+          disabled={!aiProgram}
+          onClick={() => aiProgram && commit('Use AI program', aiProgram, 'ai')}
+        >
+          {mark('ai')}🤖 {tr('AI coach’s program', 'AI-coachens program')}
+          <span className="desc">
+            {aiProgram
+              ? tr(`${aiProgram.splitName} — written for you, updated through dialogue`, `${aiProgram.splitName} — skrivet för dig, uppdateras via dialog`)
+              : tr('Create it in the card above', 'Skapa det i kortet ovan')}
+          </span>
+        </button>
+        <button
+          type="button"
           className={`choice ${current === 'imported' ? 'selected' : ''}`}
           onClick={() => commit('Use imported 3 Day Full Body', threeDayFullBody(profile), 'imported')}
         >
@@ -194,6 +207,7 @@ export default function TrainingProgramCard({ onEditingChange }: { onEditingChan
         <h3>
           {tr('Your program:', 'Ditt program:')} {L(active.splitName)}
           {current === 'custom' && <span className="pill info">{tr('edited', 'redigerat')}</span>}
+          {current === 'ai' && <span className="pill ok">{tr('AI coach', 'AI-coach')}</span>}
         </h3>
         <p className="muted small">
           {tr(
