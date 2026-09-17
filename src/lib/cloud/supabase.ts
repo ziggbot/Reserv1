@@ -49,6 +49,10 @@ let client: SupabaseClient | null | undefined
 export function getSupabase(): SupabaseClient | null {
   if (client !== undefined) return client
   const cfg = activeConfig()
-  client = cfg ? createClient(cfg.url, cfg.anonKey) : null
+  client = cfg
+    ? createClient(cfg.url, cfg.anonKey, {
+        global: { fetch: (input, init) => fetch(input, { ...init, keepalive: true }) },
+      })
+    : null
   return client
 }

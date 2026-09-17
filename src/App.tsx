@@ -12,6 +12,7 @@ import AccountGate from './features/auth/AccountGate'
 import CoachFab from './features/coach/CoachFab'
 import { clearSession, getSession } from './state/session'
 import { stopSync } from './state/cloudSync'
+import SyncBadge from './features/settings/SyncBadge'
 import { tr, useLocale } from './i18n'
 import ProgramView from './features/program/ProgramView'
 
@@ -197,6 +198,7 @@ function Header({ onLock }: { onLock?: () => void }) {
       <div>
         <div className="title">FitBlueprint</div>
       </div>
+      <SyncBadge />
       {onLock && session && (
         <button className="lock-btn" onClick={onLock} title={tr('Lock & switch profile', 'Lås & byt profil')}>
           <span aria-hidden>🔒</span> {session.displayName}

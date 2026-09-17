@@ -78,7 +78,10 @@ project so a phone and a laptop show the same thing. Coach API keys never leave 
    workflow reads them from repository secrets of the same names).
 3. Create an account with email + password, sign in on each device.
 
-Sync is last-write-wins on the whole profile, debounced 1.5 s after each change.
+Pushes go out 1.5 s after each change (and when the tab is hidden or closed). The row is pulled on
+unlock, on sign-in, when the tab becomes visible and once a minute; a newer row is merged into
+local data — workouts, weigh-ins, habit ticks, chat and history are unioned, single-valued things
+come from the side that wrote last — so nothing logged on either device is dropped.
 
 ## Look
 
