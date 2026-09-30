@@ -112,6 +112,7 @@ export default function TrainHome({ onNavigate }: { onNavigate: (t: Tab) => void
               </button>
               {peekIndex === i && (
                 <ul className="exercise-peek">
+                  <li className="warmup-line">🔥 {tr('Warm-up 10 min', 'Uppvärmning 10 min')}</li>
                   {s.exercises.map((e, j) => (
                     <li key={j}>
                       {L(e.name)} <span>{e.sets}×{L(e.reps)}</span>
@@ -222,6 +223,7 @@ function BonusStrength({ session, onStart }: { session: WorkoutSession; onStart:
         )}
       </p>
       <ul className="exercise-peek" style={{ paddingLeft: 0 }}>
+        <li className="warmup-line">🔥 {tr('Warm-up 10 min', 'Uppvärmning 10 min')}</li>
         {session.exercises.map((e, i) => (
           <li key={i}>
             {L(e.name)} <span>{e.sets}×{L(e.reps)}</span>

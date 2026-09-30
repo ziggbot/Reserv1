@@ -222,6 +222,7 @@ export default function TrainingProgramCard({
           <div className="overview-session" key={s.name}>
             <strong>{L(s.name)}</strong> <span className="muted small">{L(s.focus)}</span>
             <ul className="exercise-peek" style={{ paddingLeft: 0 }}>
+              <li className="warmup-line">🔥 {tr('Warm-up 10 min', 'Uppvärmning 10 min')}</li>
               {s.exercises.map((e, i) => (
                 <li key={i}>
                   {L(e.name)}{' '}

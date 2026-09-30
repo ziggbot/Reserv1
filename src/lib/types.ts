@@ -177,6 +177,9 @@ export interface ActiveWorkout {
   sessionName: string
   startedAt: string // ISO datetime
   exercises: LoggedExercise[]
+  /** The session's warm-up lines, shown as the first checklist item. */
+  warmup?: string[]
+  warmupDone?: boolean
 }
 
 export type ActivityCategory = 'strength' | 'cardio' | 'endurance' | 'stretch'
@@ -200,6 +203,7 @@ export interface CompletedWorkout {
   totalVolumeKg: number
   totalSets: number
   feedback?: WorkoutFeedback
+  warmupDone?: boolean
 }
 
 export interface ActivityProposal {

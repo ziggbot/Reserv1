@@ -291,7 +291,7 @@ export function ProgramEditor({
 /* ---------------- Active workout logger ---------------- */
 
 export function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedWorkout) => void }) {
-  const { activeWorkout, updateActiveSet, addActiveSet, skipActiveExercise, cancelWorkout, finishWorkout } = useAppStore()
+  const { activeWorkout, updateActiveSet, addActiveSet, skipActiveExercise, setWarmupDone, cancelWorkout, finishWorkout } = useAppStore()
   const [now, setNow] = useState(Date.now())
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null)
   const [confirmCancel, setConfirmCancel] = useState(false)
@@ -318,6 +318,24 @@ export function ActiveWorkoutScreen({ onFinished }: { onFinished: (w: CompletedW
             'Vikt × reps är förifyllda från förra gången. Tryck ✓ när ett set är klart. Slå en siffra idag.',
           )}
         </p>
+      </div>
+
+      <div className={`warmup-block ${activeWorkout.warmupDone ? 'done' : ''}`}>
+        <button
+          className={`set-check ${activeWorkout.warmupDone ? 'checked' : ''}`}
+          aria-label={activeWorkout.warmupDone ? tr('Warm-up done', 'Uppvärmning klar') : tr('Mark warm-up done', 'Markera uppvärmning klar')}
+          onClick={() => setWarmupDone(!activeWorkout.warmupDone)}
+        >
+          ✓
+        </button>
+        <div>
+          <strong className="warmup-title">🔥 {tr('Warm-up · 10 min', 'Uppvärmning · 10 min')}</strong>
+          <ul className="muted small">
+            {(activeWorkout.warmup ?? []).map((w, i) => (
+              <li key={i}>{L(w)}</li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       {restEndsAt && restLeft > 0 && (

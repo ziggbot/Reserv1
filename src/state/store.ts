@@ -133,6 +133,7 @@ interface AppState {
   addActiveSet: (exIdx: number) => void
   /** Skip (or un-skip) an exercise in the running workout. Skipping clears its done marks. */
   skipActiveExercise: (exIdx: number, skipped: boolean) => void
+  setWarmupDone: (done: boolean) => void
   cancelWorkout: () => void
   finishWorkout: (nowIso: string) => CompletedWorkout | null
   logActivity: (category: ActivityCategory, name: string, durationMin: number, date: string) => void
@@ -211,6 +212,8 @@ export const useAppStore = create<AppState>()(
           activeWorkout: {
             sessionName: session.name,
             startedAt: new Date().toISOString(),
+            warmup: session.warmup,
+            warmupDone: false,
             exercises: session.exercises.map((ex) => {
               // Prefill priority: logged history → seeded defaults from the user's
               // imported program → rep target. Same set index first, then last set.
@@ -266,6 +269,8 @@ export const useAppStore = create<AppState>()(
           return { activeWorkout: { ...s.activeWorkout, exercises } }
         }),
 
+      setWarmupDone: (done) => set((s) => (s.activeWorkout ? { activeWorkout: { ...s.activeWorkout, warmupDone: done } } : s)),
+
       cancelWorkout: () => set({ activeWorkout: null }),
 
       finishWorkout: (nowIso) => {
@@ -293,6 +298,7 @@ export const useAppStore = create<AppState>()(
           exercises: done,
           totalVolumeKg,
           totalSets: done.reduce((a, ex) => a + ex.sets.length, 0),
+          warmupDone: s.activeWorkout.warmupDone ?? false,
         }
         const exerciseMemory = { ...s.exerciseMemory }
         for (const ex of done) {

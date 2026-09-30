@@ -607,6 +607,14 @@ details.evidence summary { cursor: pointer; color: var(--text-dim); font-size: 0
 }
 .custom-list li:last-child { border-bottom: none; }
 
+/* ---------- Warm-up checklist item ---------- */
+.warmup-block { display: grid; grid-template-columns: 46px 1fr; gap: 10px; align-items: start; padding: 10px 0; border-bottom: 2px solid var(--ink); }
+.warmup-block .set-check { height: 44px; }
+.warmup-block ul { margin: 2px 0 0; padding-left: 1.1em; }
+.warmup-title { font-family: var(--hand); font-size: 1.3rem; }
+.warmup-block.done .warmup-title { text-decoration: line-through; color: var(--text-dim); }
+.exercise-peek .warmup-line { color: var(--text-dim); }
+
 /* ---------- Active workout logger ---------- */
 .workout-screen { padding-bottom: 76px; }
 .workout-screen .exercise-block { padding: 12px 0 6px; border-bottom: 2px solid var(--ink); }
