@@ -99,3 +99,24 @@ describe('habit engine', () => {
     expect(currentStreak([], '2026-07-10')).toBe(0)
   })
 })
+
+describe('Whole Body in One preset', () => {
+  it('builds one identical compound session per strength day, injury- and equipment-aware', async () => {
+    const { buildPresetProgram } = await import('../programs')
+    const { withTrainingDays } = await import('../trainingDays')
+    const clean = { ...profile, injuries: [] as Profile['injuries'], equipment: 'full_gym' as const }
+    const p = buildPresetProgram(withTrainingDays(clean, 3, 1), 'wholebody')
+    expect(p.splitName).toBe('Whole body ×3')
+    expect(p.sessions.map((s) => s.name)).toEqual(['Whole Body 1', 'Whole Body 2', 'Whole Body 3'])
+    const names = p.sessions[0].exercises.map((e) => e.name)
+    expect(names).toHaveLength(6)
+    expect(names).toContain('Barbell back squat')
+    expect(names).toContain('Plank')
+    expect(p.sessions[0].exercises.filter((e) => e.name !== 'Plank').every((e) => e.sets === 3 && e.reps === '6–10')).toBe(true)
+    const knee = buildPresetProgram(withTrainingDays({ ...clean, injuries: ['knee'] }, 2, 0), 'wholebody')
+    expect(knee.sessions).toHaveLength(2)
+    expect(knee.sessions[0].exercises.map((e) => e.name)).not.toContain('Barbell back squat')
+    const home = buildPresetProgram(withTrainingDays({ ...clean, equipment: 'none' }, 2, 0), 'wholebody')
+    expect(home.sessions[0].exercises.map((e) => e.name)).toContain('Push-up')
+  })
+})

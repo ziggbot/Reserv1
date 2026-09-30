@@ -236,6 +236,7 @@ export const PROGRAM_PRESETS: ProgramPreset[] = [
   { id: 'fullbody3', name: 'Full Body ×3', description: 'The classic 3-day plan — best value per gym hour', overrides: { daysPerWeek: 3, strengthDaysPerWeek: 3 } },
   { id: 'upperlower4', name: 'Upper / Lower ×4', description: '4 days, more volume per muscle', overrides: { daysPerWeek: 4, strengthDaysPerWeek: 4 } },
   { id: 'ppl6', name: 'Push / Pull / Legs ×6', description: '6 days for experienced lifters', overrides: { daysPerWeek: 6, strengthDaysPerWeek: 6 } },
+  { id: 'wholebody', name: 'Whole Body in One', description: 'Every major muscle in one session — squat, hinge, press, row, overhead, core. Repeat on each strength day', overrides: {} },
   { id: 'minimal30', name: '30-min Express', description: 'Short sessions for packed weeks', overrides: { minutesPerSession: 30 } },
   { id: 'travel', name: 'Bodyweight Travel', description: 'No equipment — hotel room friendly', overrides: { equipment: 'none' } },
 ]
@@ -246,6 +247,7 @@ const PRESET_SV: Record<string, { name: string; description: string }> = {
   fullbody3: { name: 'Helkropp ×3', description: 'Det klassiska 3-dagarsupplägget — mest värde per gymtimme' },
   upperlower4: { name: 'Över / Under ×4', description: '4 dagar, mer volym per muskel' },
   ppl6: { name: 'Push / Pull / Ben ×6', description: '6 dagar för erfarna lyftare' },
+  wholebody: { name: 'Hela kroppen på ett pass', description: 'Alla stora muskelgrupper i ett pass — knäböj, marklyft, bänk, rodd, press, bål. Kör samma pass varje styrkedag' },
   minimal30: { name: '30-min Express', description: 'Korta pass för fullpackade veckor' },
   travel: { name: 'Kroppsvikt på resan', description: 'Ingen utrustning — funkar på hotellrummet' },
 }
@@ -262,7 +264,45 @@ export function presetDescription(preset: ProgramPreset): string {
 
 export function buildPresetProgram(profile: Profile, presetId: string): WorkoutProgram {
   const preset = PROGRAM_PRESETS.find((p) => p.id === presetId) ?? PROGRAM_PRESETS[0]
+  if (preset.id === 'wholebody') return buildWholeBodyProgram(profile)
   return buildProgram({ ...profile, ...preset.overrides })
+}
+
+/**
+ * The classic "whole body in one session": the six big compound patterns,
+ * 3 × 6–10, repeated on every strength day (2–3×/week is the sweet spot).
+ * Exercises come from the injury/equipment-aware library, so "squat" becomes
+ * leg press or goblet squat when a knee is flagged or there is no barbell.
+ */
+export function buildWholeBodyProgram(profile: Profile): WorkoutProgram {
+  const days = Math.max(1, Math.min(6, trainingDays(profile).strength))
+  const patterns: Pattern[] = ['squat', 'hinge', 'horizontal_push', 'horizontal_pull', 'vertical_push', 'core']
+  const exercises: ExercisePrescription[] = patterns.map((pattern) => {
+    const name = pickExercise(pattern, profile.equipment, profile.injuries)
+    const base = prescriptionFor(profile, pattern, name)
+    return pattern === 'core' ? base : { ...base, sets: profile.minutesPerSession < 45 ? 2 : 3, reps: '6–10' }
+  })
+  const sessions: WorkoutSession[] = Array.from({ length: days }, (_, i) => ({
+    name: `Whole Body ${i + 1}`,
+    focus: 'Every major muscle group',
+    warmup: WARMUP,
+    exercises,
+    mobilityFinisher: mobilityFor('full'),
+  }))
+  const base = buildProgram(profile)
+  return {
+    ...base,
+    splitName: `Whole body ×${days}`,
+    sessions,
+    progressionRules: [
+      tr(
+        'Same six lifts every session — when you hit 10 reps on all sets, add weight next time (2.5–5 kg on lower body, 1–2.5 kg on upper).',
+        'Samma sex lyft varje pass — när du klarar 10 reps på alla set, lägg på vikt nästa gång (2,5–5 kg på ben, 1–2,5 kg på överkropp).',
+      ),
+      tr('Leave 1–3 reps in reserve on every set; the last rep should be slow but clean.', 'Ha 1–3 reps i reserv på varje set; sista repet ska vara långsamt men rent.'),
+      tr('Rest a day between sessions — 2–3 sessions a week is the sweet spot.', 'Vila en dag mellan passen — 2–3 pass i veckan är optimalt.'),
+    ],
+  }
 }
 
 const INJURY_SV: Record<Injury, string> = {

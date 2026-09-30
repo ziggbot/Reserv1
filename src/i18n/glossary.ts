@@ -75,9 +75,16 @@ const CORE: Record<string, string> = {
   'Pull 2': 'Pull 2',
   'Legs 2': 'Ben 2',
   'Bonus full body': 'Bonus helkropp',
+  'Whole Body 1': 'Hela kroppen 1',
+  'Whole Body 2': 'Hela kroppen 2',
+  'Whole Body 3': 'Hela kroppen 3',
+  'Whole Body 4': 'Hela kroppen 4',
+  'Whole Body 5': 'Hela kroppen 5',
+  'Whole Body 6': 'Hela kroppen 6',
 
   // --- Session focus
   'Whole-body strength': 'Helkroppsstyrka',
+  'Every major muscle group': 'Alla stora muskelgrupper',
   'Chest, back, shoulders, arms': 'Bröst, rygg, axlar, armar',
   'Legs, glutes, core': 'Ben, säte, bål',
   'Chest, shoulders, triceps': 'Bröst, axlar, triceps',
@@ -99,6 +106,12 @@ const CORE: Record<string, string> = {
   'Upper / Lower + Push / Pull / Legs': 'Över / Under + Push / Pull / Ben',
   'Push / Pull / Legs ×2': 'Push / Pull / Ben ×2',
   '3 Day Full Body': '3-dagars helkropp',
+  'Whole body ×1': 'Hela kroppen ×1',
+  'Whole body ×2': 'Hela kroppen ×2',
+  'Whole body ×3': 'Hela kroppen ×3',
+  'Whole body ×4': 'Hela kroppen ×4',
+  'Whole body ×5': 'Hela kroppen ×5',
+  'Whole body ×6': 'Hela kroppen ×6',
 
   // --- Effort and rep targets
   'RPE 6–7 (2–4 reps left in the tank)': 'RPE 6–7 (2–4 reps kvar i tanken)',
