@@ -35,3 +35,25 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+
+  # MCP server for ChatGPT / Claude (see server/README.md). Set SUPABASE_* and
+  # PUBLIC_URL (this service's https URL) in the dashboard.
+  - type: web
+    name: fitblueprint-mcp
+    runtime: node
+    rootDir: server
+    branch: claude/training-schedule-ux-7de11g
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: PUBLIC_URL
+        sync: false
+      - key: APP_URL
+        value: https://ziggbot.github.io/Reserv1/

@@ -4,7 +4,7 @@ import { buildHabitPlan, currentStreak } from '../habits'
 import { buildWeeklySchedule } from '../weeklySchedule'
 import { addDaysIso, inWeek, isoWeek, nextSession, rollingCycle, startOfWeekIso } from '../trainWeek'
 import { bestSets, previousBests, topExerciseTrends } from '../trends'
-import { weeksSince } from '../../state/store'
+import { weeksSince } from '../dates'
 import { describeWeek } from '../trainingDays'
 
 /**

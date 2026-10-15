@@ -14,6 +14,25 @@ export interface AccountMeta {
   verifierB64: string
   createdAt: string
   consentAt: string
+  /** Set for profiles that are a Supabase account: the auth user id. Unlock = being signed in. */
+  cloudUserId?: string
+}
+
+/** Local profile bound to a Supabase account (created on first sign-in on this device). */
+export function ensureCloudAccount(cloudUserId: string, displayName: string, nowIso: string): AccountMeta {
+  const existing = listAccounts().find((a) => a.cloudUserId === cloudUserId)
+  if (existing) return existing
+  const meta: AccountMeta = {
+    id: `sb-${cloudUserId}`,
+    displayName: displayName.trim() || 'Me',
+    saltB64: '',
+    verifierB64: '',
+    createdAt: nowIso,
+    consentAt: nowIso,
+    cloudUserId,
+  }
+  writeRegistry([...listAccounts(), meta])
+  return meta
 }
 
 const REGISTRY_KEY = 'fitblueprint-accounts'

@@ -12,17 +12,27 @@ import {
 import { setSession } from '../../state/session'
 import { bindAccountStorage, importLegacyState, todayIso } from '../../state/store'
 import { storageIsPersistent } from '../../state/storage'
-import { startSync } from '../../state/cloudSync'
+import { currentSession, signIn, signUp, startSync } from '../../state/cloudSync'
+import { activeConfig } from '../../lib/cloud/supabase'
+import { ensureCloudAccount } from '../../state/accounts'
 import { tr, fmtDate } from '../../i18n'
 import LanguageToggle from '../../i18n/LanguageToggle'
 
-type Mode = 'list' | 'create' | 'unlock'
+type Mode = 'list' | 'create' | 'unlock' | 'cloud'
 
 export default function AccountGate({ onReady }: { onReady: () => void }) {
   const [accounts, setAccounts] = useState<AccountMeta[]>(() => listAccounts())
-  const [mode, setMode] = useState<Mode>(accounts.length ? 'list' : 'create')
+  const cloudConfigured = activeConfig() !== null
+  const [mode, setMode] = useState<Mode>(accounts.length ? 'list' : cloudConfigured ? 'cloud' : 'create')
   const [selected, setSelected] = useState<AccountMeta | null>(null)
   const hasCrypto = cryptoAvailable()
+
+  /** A cloud-bound profile needs no passcode: being signed in to Supabase is the unlock. */
+  async function openCloudAccount(meta: AccountMeta) {
+    const session = await currentSession()
+    if (session && session.user.id === meta.cloudUserId) await finishUnlock(meta, null)
+    else setMode('cloud')
+  }
 
   async function finishUnlock(meta: AccountMeta, key: CryptoKey | null) {
     setSession({ accountId: meta.id, displayName: meta.displayName, key })
@@ -69,7 +79,8 @@ export default function AccountGate({ onReady }: { onReady: () => void }) {
                 className="choice account-row"
                 onClick={() => {
                   setSelected(a)
-                  setMode('unlock')
+                  if (a.cloudUserId) void openCloudAccount(a)
+                  else setMode('unlock')
                 }}
               >
                 <span className="account-avatar" aria-hidden>
@@ -84,10 +95,28 @@ export default function AccountGate({ onReady }: { onReady: () => void }) {
               </button>
             ))}
           </div>
-          <button className="primary" onClick={() => setMode('create')}>
-            + {tr('New profile', 'Ny profil')}
-          </button>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {cloudConfigured && (
+              <button className="primary" onClick={() => setMode('cloud')}>
+                ☁ {tr('Sign in with email', 'Logga in med e-post')}
+              </button>
+            )}
+            <button className={cloudConfigured ? 'ghost' : 'primary'} onClick={() => setMode('create')}>
+              + {tr('Local profile', 'Lokal profil')}
+            </button>
+          </div>
         </>
+      )}
+
+      {mode === 'cloud' && (
+        <CloudForm
+          onBack={accounts.length ? () => setMode('list') : () => setMode('create')}
+          onSignedIn={async (uid, email) => {
+            const meta = ensureCloudAccount(uid, email, todayIso())
+            setAccounts(listAccounts())
+            await finishUnlock(meta, null)
+          }}
+        />
       )}
 
       {mode === 'unlock' && selected && (
@@ -115,6 +144,82 @@ export default function AccountGate({ onReady }: { onReady: () => void }) {
         />
       )}
     </div>
+  )
+}
+
+function CloudForm({ onBack, onSignedIn }: { onBack: () => void; onSignedIn: (uid: string, email: string) => Promise<void> }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [consent, setConsent] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function go(kind: 'in' | 'up') {
+    setBusy(true)
+    setError('')
+    const err = kind === 'in' ? await signIn(email.trim(), password) : await signUp(email.trim(), password)
+    if (err) {
+      setError(err)
+      setBusy(false)
+      return
+    }
+    const session = await currentSession()
+    if (!session) {
+      setError(tr('Signed in, but no session was returned. Try again.', 'Inloggad, men ingen session returnerades. Försök igen.'))
+      setBusy(false)
+      return
+    }
+    await onSignedIn(session.user.id, session.user.email ?? email.trim())
+  }
+
+  return (
+    <>
+      <h2>☁ {tr('Sign in', 'Logga in')}</h2>
+      <p className="muted small">
+        {tr(
+          'One account for the web app and for the coach inside ChatGPT or Claude. Your data is stored in your Supabase project and cached on this device.',
+          'Ett konto för webbappen och för coachen inne i ChatGPT eller Claude. Dina data lagras i ditt Supabase-projekt och cachas på den här enheten.',
+        )}
+      </p>
+      <div className="field">
+        <label>{tr('Email', 'E-post')}</label>
+        <input type="text" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+      </div>
+      <div className="field">
+        <label>{tr('Password', 'Lösenord')}</label>
+        <input
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && email && password.length >= 6 && consent && go('in')}
+        />
+        <div className="hint">{tr('At least 6 characters.', 'Minst 6 tecken.')}</div>
+      </div>
+      <label className="consent-row">
+        <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+        <span>
+          {tr(
+            'I consent to FitBlueprint storing my fitness and health data in my Supabase project and on this device to provide coaching.',
+            'Jag samtycker till att FitBlueprint lagrar mina tränings- och hälsodata i mitt Supabase-projekt och på den här enheten för att ge coachning.',
+          )}
+        </span>
+      </label>
+      {error && <div className="banner danger">{error}</div>}
+      <div className="wizard-nav">
+        <button className="ghost" onClick={onBack}>
+          {tr('Back', 'Tillbaka')}
+        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="ghost" disabled={busy || !email || password.length < 6 || !consent} onClick={() => go('up')}>
+            {tr('Create account', 'Skapa konto')}
+          </button>
+          <button className="primary" disabled={busy || !email || password.length < 6 || !consent} onClick={() => go('in')}>
+            {busy ? tr('Signing in…', 'Loggar in…') : tr('Sign in', 'Logga in')}
+          </button>
+        </div>
+      </div>
+    </>
   )
 }
 

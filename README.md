@@ -65,6 +65,16 @@ program"):
   4–5-week blocks with a deload, and library exercise names (invented names are reported).
 - The AI program is one choice next to the presets and survives switching away and back.
 
+## One account, two surfaces
+
+With Supabase configured, the unlock screen offers **Sign in with email** as the main path. That
+account is the identity on every surface: the web app (data cached locally, synced to the row) and
+the coach inside ChatGPT or Claude (`server/`, an MCP server over the same row and the same
+engine). Local passcode-only profiles remain available for people who never want an account.
+
+The MCP server exposes the profile, the training digest, the next session, the program, logging
+and program updates as tools; see `server/README.md` for running it and for the OAuth setup.
+
 ## Cloud sync (Supabase)
 
 Optional. Everything works offline on one device; sign in under More → Settings → Cloud sync and

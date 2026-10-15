@@ -1,13 +1,28 @@
 import type { CoachContext } from './types'
-import { useAppStore, todayIso } from '../../state/store'
+import type { CompletedWorkout, Profile, WeighIn, WorkoutProgram } from '../types'
+import { useAppStore } from '../../state/store'
+import { todayIso } from '../dates'
 import { defaultProgram } from '../threeDayFullBody'
 import { buildWeeklySchedule } from '../weeklySchedule'
 import { exerciseLibrary } from '../programs'
 import { buildGrounding } from './grounding'
 
-/** One place that assembles what the coach knows: profile, program, library, log digest. */
-export function buildCoachContext(): CoachContext | null {
-  const s = useAppStore.getState()
+/** The slice of app data the coach context is built from (same shape on the server). */
+export interface CoachSnapshot {
+  profile: Profile | null
+  customProgram: WorkoutProgram | null
+  programChoice: string | null
+  customExercises: string[]
+  aiProgramLog: { ts: string; summary: string }[]
+  completedWorkouts: CompletedWorkout[]
+  weighIns: WeighIn[]
+  habitChecks: Record<string, string[]>
+  planStartDate: string | null
+  planHistory: { ts: string; source: string; description: string }[]
+}
+
+/** Pure: everything the coach knows from a data snapshot. */
+export function coachContextFrom(s: CoachSnapshot, today = todayIso()): CoachContext | null {
   if (!s.profile) return null
   const program = defaultProgram(s.profile, s.customProgram)
   return {
@@ -26,7 +41,12 @@ export function buildCoachContext(): CoachContext | null {
       habitChecks: s.habitChecks,
       planStartDate: s.planStartDate,
       planHistory: s.planHistory,
-      today: todayIso(),
+      today,
     }),
   }
+}
+
+/** App wrapper over the live store. */
+export function buildCoachContext(): CoachContext | null {
+  return coachContextFrom(useAppStore.getState())
 }
