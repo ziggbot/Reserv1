@@ -4,6 +4,7 @@ import { getSession } from '../../state/session'
 import { eraseAccount } from '../../state/accounts'
 import TrainingProgramCard from './TrainingProgramCard'
 import CoachSettingsCard from './CoachSettingsCard'
+import CloudBackupCard from './CloudBackupCard'
 
 export default function SettingsView({ onLock }: { onLock: () => void }) {
   const { profile, setProfile, resetAll, weighIns } = useAppStore()
@@ -75,11 +76,13 @@ export default function SettingsView({ onLock }: { onLock: () => void }) {
 
       <TrainingProgramCard />
 
+      <CloudBackupCard />
+
       <div className="card">
         <h2>🔐 Your data & privacy</h2>
         <p className="muted small">
           {weighIns.length} weigh-ins stored. Your data lives only on this device, encrypted with your
-          passcode. It is never sent to any server — you are the data controller.
+          passcode. A cloud copy is sent to Neon only when you choose Save in the cloud-account panel.
         </p>
 
         <h3>Export my data</h3>
@@ -113,7 +116,7 @@ export default function SettingsView({ onLock }: { onLock: () => void }) {
         <h3 style={{ marginTop: 16 }}>Erase my account</h3>
         <p className="muted small">
           Permanently delete this profile and all its encrypted data from this device (GDPR Article 17 —
-          right to erasure). This cannot be undone.
+          right to erasure). Delete any cloud copy separately in the cloud-account panel. This cannot be undone.
         </p>
         {!confirmErase ? (
           <button className="ghost" style={{ borderColor: 'var(--danger)', color: 'var(--danger)' }} onClick={() => setConfirmErase(true)}>

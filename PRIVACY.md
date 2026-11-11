@@ -80,3 +80,9 @@ A server-backed multi-device version must add, at minimum:
 
 Health data is a *special category* under Art. 9 — a server deployment raises the
 compliance bar substantially versus the current on-device design.
+# Optional Render + Neon deployment
+
+The local-only descriptions below apply to local profiles. If you choose the new cloud-account and
+backup features, Neon handles cloud identity and stores encrypted snapshots and profile metadata
+through the Render server. See [`public/cloud-privacy.html`](public/cloud-privacy.html) for that data
+flow, retention limitations, and separate local/cloud deletion. External AI providers are also optional.

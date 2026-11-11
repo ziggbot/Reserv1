@@ -12,6 +12,7 @@ import {
 import { setSession } from '../../state/session'
 import { bindAccountStorage, importLegacyState, todayIso } from '../../state/store'
 import { storageIsPersistent } from '../../state/storage'
+import CloudBackupCard from '../settings/CloudBackupCard'
 
 type Mode = 'list' | 'create' | 'unlock'
 
@@ -28,6 +29,7 @@ export default function AccountGate({ onReady }: { onReady: () => void }) {
   }
 
   return (
+    <>
     <div className="card auth-card">
       <div className="app-header" style={{ padding: '4px 0 12px' }}>
         <span style={{ fontSize: '1.6rem' }}>🔒</span>
@@ -105,6 +107,8 @@ export default function AccountGate({ onReady }: { onReady: () => void }) {
         />
       )}
     </div>
+    <CloudBackupCard />
+    </>
   )
 }
 
@@ -245,10 +249,10 @@ function CreateForm({
         <div className="banner info small">
           <strong>Privacy notice.</strong> Your data (profile, weigh-ins, workouts, habits) is stored only
           on this device, encrypted with a key derived from your passcode (PBKDF2 + AES-256-GCM). It is
-          never sent to any server — there are no third-party processors and no transfers. You are the data
-          controller. You can export all your data or erase it entirely at any time from Settings (GDPR
-          Articles 17 & 20). Legal basis: your consent (Article 6(1)(a)), withdrawable anytime by erasing
-          your profile.
+          kept on this device by default. If you choose cloud backup, an encrypted copy and profile metadata
+          are sent to Neon through Render; see the cloud-data notice. You can export your local data or erase
+          it from Settings (GDPR
+          Articles 17 & 20). Delete cloud copies separately in the cloud-account panel.
         </div>
       )}
       {error && <div className="banner danger">{error}</div>}

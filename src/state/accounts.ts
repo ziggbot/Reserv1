@@ -31,6 +31,13 @@ function writeRegistry(list: AccountMeta[]): void {
   rawStorage.setItem(REGISTRY_KEY, JSON.stringify(list))
 }
 
+/** Register a cloud snapshot only after its passcode and ciphertext were verified. */
+export function registerRestoredAccount(meta: AccountMeta, ciphertext: string): void {
+  if (!/^[a-f0-9]{16}$/.test(meta.id) || !ciphertext.startsWith('enc:')) throw new Error('Invalid backup')
+  rawStorage.setItem(storageNameFor(meta.id), ciphertext)
+  writeRegistry([...listAccounts().filter(account => account.id !== meta.id), meta])
+}
+
 function newId(): string {
   const b = new Uint8Array(8)
   crypto.getRandomValues(b)
