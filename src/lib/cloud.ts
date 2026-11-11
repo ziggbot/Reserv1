@@ -12,7 +12,6 @@ type ManagedResult<T> = Promise<{ data: T | null; error: { message?: string } | 
 // These are built-in Managed Auth methods. This SDK release loses their plugin
 // types under the app's TypeScript version; no custom auth plugins are added.
 export const cloudAuth = client as typeof client & {
-  token(): ManagedResult<{ token: string }>
   emailOtp: {
     resetPassword(input: { email: string; otp: string; password: string }): ManagedResult<unknown>
     sendVerificationOtp(input: { email: string; type: 'forget-password' }): ManagedResult<unknown>
@@ -27,9 +26,12 @@ export interface CloudBackup {
 }
 
 async function cloudRequest(path = '', options: RequestInit = {}) {
-  const { data, error } = await cloudAuth.token()
-  if (error || !data?.token) throw new Error('Logga in på ditt molnkonto igen.')
-  const response = await fetch(`/api/backups${path}`, { ...options, headers: { ...options.headers, 'Content-Type': 'application/json', Authorization: `Bearer ${data.token}` }, cache: 'no-store' })
+  // Managed Auth injects the signed JWT into session.token. In this SDK release,
+  // token() shares the session cache and may return a session-shaped response.
+  const { data, error } = await cloudAuth.getSession()
+  const token = data?.session?.token
+  if (error || !token || token.split('.').length !== 3) throw new Error('Logga in på ditt molnkonto igen.')
+  const response = await fetch(`/api/backups${path}`, { ...options, headers: { ...options.headers, 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, cache: 'no-store' })
   if (response.status === 204) return null
   const result = await response.json()
   if (!response.ok) throw new Error(response.status === 409 ? 'En nyare kopia finns i molnet. Uppdatera listan och välj sedan vilken version du vill spara.' : result.error || 'Molntjänsten svarar inte.')
