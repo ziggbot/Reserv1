@@ -15,7 +15,8 @@ npm run build
 node --env-file=.env server/index.mjs
 ```
 
-Öppna `http://localhost:3000`. Utveckling med bara Vite saknar molnservern;
+Öppna `http://localhost:3000`. Utan komplett molnkonfiguration startar servern
+med lokal träning och döljer molnkontot. Utveckling med bara Vite saknar molnservern;
 den lokala träningsappen fungerar ändå. Servern behöver Node 22 eller senare.
 
 ## Infrastruktur
