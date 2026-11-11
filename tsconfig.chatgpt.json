@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["chatgpt/**/*.ts", "src/vite-env.d.ts"],
+  "exclude": ["chatgpt/**/*.test.ts"]
+}

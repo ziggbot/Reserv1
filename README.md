@@ -1,5 +1,9 @@
 # FitBlueprint — Evidence-Based Personal Trainer
 
+ChatGPT integration source is in [`chatgpt/`](chatgpt/README.md), with a mobile
+MCP App view and server tools built on the existing engine. Public distribution
+is not yet configured; see [publication preparation](chatgpt/PUBLICATION.md).
+
 A personal-trainer web app that covers five coaching use cases, powered by a deterministic,
 research-grounded engine — no accounts, no server, no API keys. All data stays in your browser.
 

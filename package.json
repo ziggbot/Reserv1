@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:chatgpt": "tsc --noEmit -p tsconfig.chatgpt.json && vite build --config vite.chatgpt.config.ts",
+    "test:chatgpt": "vitest run --config vite.chatgpt.config.ts"
   },
   "dependencies": {
     "react": "^18.3.1",
