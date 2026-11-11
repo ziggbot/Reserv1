@@ -132,7 +132,8 @@ function Disclaimer() {
       FitBlueprint provides general fitness and nutrition education based on published research. It is
       not medical advice and does not replace a physician, registered dietitian or physiotherapist —
       especially if you have a medical condition, an injury, or are pregnant. Stop and seek care for
-      chest pain, dizziness or acute pain. All data stays on this device.
+      chest pain, dizziness or acute pain. Data stays on this device unless you choose a cloud backup
+      or enable an external AI coach. <a href="/cloud-privacy.html">Cloud privacy</a>.
     </p>
   )
 }

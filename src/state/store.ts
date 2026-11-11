@@ -29,6 +29,7 @@ export interface PlanRevision {
  * an account is unlocked there is no session, so reads return null and writes
  * are dropped — the store simply holds defaults.
  */
+let bindingAccount = false
 const encryptedStorage: StateStorage = {
   getItem: async (name) => {
     if (!getSession()) return null
@@ -37,8 +38,11 @@ const encryptedStorage: StateStorage = {
     return sessionDecrypt(stored)
   },
   setItem: async (name, value) => {
-    if (!getSession()) return
-    rawStorage.setItem(name, await sessionEncrypt(value))
+    const session = getSession()
+    if (!session || bindingAccount) return
+    const encrypted = await sessionEncrypt(value)
+    if (getSession() !== session) return
+    rawStorage.setItem(name, encrypted)
   },
   removeItem: async (name) => {
     rawStorage.removeItem(name)
@@ -391,9 +395,12 @@ export const useAppStore = create<AppState>()(
 
 /** Point the store at an unlocked account and load its (decrypted) data. */
 export async function bindAccountStorage(storageName: string): Promise<void> {
-  useAppStore.setState({ ...INITIAL_DATA }) // clear any previous account's state
-  useAppStore.persist.setOptions({ name: storageName })
-  await useAppStore.persist.rehydrate()
+  bindingAccount = true
+  try {
+    useAppStore.setState({ ...INITIAL_DATA })
+    useAppStore.persist.setOptions({ name: storageName })
+    await useAppStore.persist.rehydrate()
+  } finally { bindingAccount = false }
 }
 
 /** Import plaintext state from the pre-accounts version into the current account. */

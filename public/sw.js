@@ -1,5 +1,5 @@
-/* Minimal offline-shell service worker: cache-first for same-origin GETs. */
-const CACHE = 'fitblueprint-v1'
+/* Cache only the app shell and versioned assets. Never cache auth or API data. */
+const CACHE = 'fitblueprint-v2'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './icon.svg'])))
@@ -15,14 +15,25 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event
-  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return
+  const url = new URL(request.url)
+  if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/') || url.pathname === '/health') return
+  if (request.mode === 'navigate') {
+    event.respondWith(fetch(request).then(res => {
+      if (res.ok) caches.open(CACHE).then(cache => cache.put('./index.html', res.clone()))
+      return res
+    }).catch(() => caches.match('./index.html')))
+    return
+  }
+  if (!url.pathname.startsWith('/assets/') && !['/icon.svg', '/manifest.webmanifest'].includes(url.pathname)) return
   event.respondWith(
     caches.match(request).then(
       (cached) =>
         cached ||
         fetch(request).then((res) => {
-          const copy = res.clone()
-          caches.open(CACHE).then((c) => c.put(request, copy))
+          if (res.ok) {
+            const copy = res.clone()
+            caches.open(CACHE).then((c) => c.put(request, copy))
+          }
           return res
         }),
     ),

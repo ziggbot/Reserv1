@@ -1,11 +1,16 @@
 # FitBlueprint — Evidence-Based Personal Trainer
 
+Standalone hosting with Render and Neon, optional encrypted cloud backups, and
+independent mobile use: [`server/README.md`](server/README.md).
+
 ChatGPT integration source is in [`chatgpt/`](chatgpt/README.md), with a mobile
 MCP App view and server tools built on the existing engine. Public distribution
 is not yet configured; see [publication preparation](chatgpt/PUBLICATION.md).
 
 A personal-trainer web app that covers five coaching use cases, powered by a deterministic,
-research-grounded engine — no accounts, no server, no API keys. All data stays in your browser.
+research-grounded engine. The default local mode needs no server or API keys and keeps data in your
+browser. The optional standalone Render + Neon deployment adds a separate cloud account and manual,
+encrypted backups; it does not require ChatGPT.
 
 ## The five use cases
 
