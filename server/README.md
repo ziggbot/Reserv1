@@ -56,8 +56,18 @@ Kontrollera att Render-deployen är `live`, att `/health` och startsidan svarar,
 och att skyddade API-anrop utan inloggning nekas. Testa sedan verklig registrering,
 session efter omladdning, utloggning, sparande och återställning med syntetiska data.
 
-Vid källkodshandoff väntar skapandet av Render-tjänsten på användarens val av
-arbetsyta. Det finns ingen verifierad produktions-URL ännu.
+Publicerad 2026-11-11: **https://fitblueprint.onrender.com**.
+Render-tjänst: `srv-dbqcvk5g1s2s73dvo86g` i användarens bekräftade arbetsyta
+`tea-d8c2dth9rddc73f6jo80`. Deploy `dep-dbqcvklg1s2s73dvo90g` är `live`;
+`/health` svarar 200. Appen kan användas med lokal krypterad lagring.
+
+Molnkopior är ännu avstängda (`/api/config` returnerar `cloudEnabled: false`).
+Automatisk säkerhetsgranskning avvisade överföringen av Neons databaslösenord
+till Render utan separat uttryckligt godkännande. Ingen `DATABASE_URL` har
+skickats till Render. Efter godkännande kan den sparas som serverhemlighet i
+den befintliga tjänsten och en ny deploy genomföras; skapa inte en ny tjänst.
+Alternativt kan ägaren lägga in den via Render Dashboard → Environment.
+Den publika appadressen är redan tillagd i Neons trusted origins.
 
 ## Säkerhet och dataflöde
 
