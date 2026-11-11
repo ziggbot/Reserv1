@@ -58,16 +58,24 @@ session efter omladdning, utloggning, sparande och återställning med syntetisk
 
 Publicerad 2026-11-11: **https://fitblueprint.onrender.com**.
 Render-tjänst: `srv-dbqcvk5g1s2s73dvo86g` i användarens bekräftade arbetsyta
-`tea-d8c2dth9rddc73f6jo80`. Deploy `dep-dbqcvklg1s2s73dvo90g` är `live`;
-`/health` svarar 200. Appen kan användas med lokal krypterad lagring.
+`tea-d8c2dth9rddc73f6jo80`. Deploy `dep-dbqddd49v7es73dfov90` är `live`
+på applikationscommit `30b8842ad0ee6a0065a3d732dbd914511ebda021`.
+`/health` svarar 200 och `/api/config` returnerar `cloudEnabled: true`.
 
-Molnkopior är ännu avstängda (`/api/config` returnerar `cloudEnabled: false`).
-Automatisk säkerhetsgranskning avvisade överföringen av Neons databaslösenord
-till Render utan separat uttryckligt godkännande. Ingen `DATABASE_URL` har
-skickats till Render. Efter godkännande kan den sparas som serverhemlighet i
-den befintliga tjänsten och en ny deploy genomföras; skapa inte en ny tjänst.
-Alternativt kan ägaren lägga in den via Render Dashboard → Environment.
-Den publika appadressen är redan tillagd i Neons trusted origins.
+Efter ägarens uttryckliga godkännande har `DATABASE_URL` sparats som serverhemlighet
+i den befintliga Render-tjänsten. Värdet finns inte i källkoden eller webbläsaren.
+Den publika appadressen är tillagd i Neons trusted origins.
+
+Verifierat mot den riktiga publicerade appen 2026-11-11: ett syntetiskt molnkonto
+skapades, en lokal träningsplan sparades krypterat till Neon och återställdes i en
+ny webbläsarsession med den ursprungliga profilkoden. Den återställda profilen
+behöll sina uppgifter. Provkopian raderades därefter via appens bekräftelseflöde.
+Anrop till molnkopior utan inloggning returnerar 401. Det rättade tokenflödet
+använder Managed Auth-SDK:ns `getSession().data.session.token`.
+
+Molnkopior är manuella: välj Spara upplåst profil till Neon i Inställningar.
+På en annan enhet loggar du in på samma molnkonto, hämtar kopian och anger
+den ursprungliga profilkoden. Behåll både molnlösenordet och profilkoden.
 
 ## Säkerhet och dataflöde
 
